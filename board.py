@@ -17,6 +17,7 @@ from relay import Relay
 from micropython import const, mem_info
 from gc import collect
 import ntptime
+from http import http_run
 
 LOWER_POWER_FEQ = const(40000000)
 SYS_STATE_NONE = const(0)
@@ -39,14 +40,6 @@ SYS_STATE_TIMEOUT = const(30) # 系统状态超时，系统进入某种状态，
     进入WIFI配置: 再次长按，提示灯闪烁加快，短双击
     进入系统重置：在进入WIFI配置后，再次长按，提示灯闪烁加快，短双击
 '''
-import tinyweb
-app = tinyweb.webserver()
-@app.catchall()
-async def index(request, response):
-    # Start HTTP response with content-type text/html
-    await response.start_html()
-    # Send actual HTML page
-    await response.send('<html><body><h1>Hello, world! (<a href="/table">table</a>)</h1></html>\n')
 
 @singleton
 class Board:
@@ -152,7 +145,7 @@ class Board:
         if hw.WIFI:
             self.__wifi = Wifi(hostname = hw.DEVICE_NAME, pin = hw.WIFI_LED_PIN)
             if self.__wifi.connect():
-                self.__wifi.info()
+                hw.log.debug(self.__wifi.get_info())
                 asyncio.create_task(self.__wifi.monitor())
             else:
                 # TODO setup AP
@@ -170,15 +163,16 @@ class Board:
     async def __setup_devices(self):
         hw.log.debug("Setting up device ...")
         self.__sensor_process = SensorProcess()
+        def_consumer = DefaultConsumer()
         consumers = []
-        consumers.append(DefaultConsumer())
-        self.__sensor_process.setup(consumers, dev.DEVICES)
-        ops = []
-        ops.append(self.__scheduler)
-        ops.append(self.__config)
-        ops.append(self.__wifi)
-        ops.append(self.__sys_op)
-        self.__opc.setup(ops)
+        consumers.append(def_consumer)
+        self.__sensor_process.setup(consumers, dev.SENSORS)
+        dev.OPERATORS.append(self.__scheduler)
+        dev.OPERATORS.append(self.__config)
+        dev.OPERATORS.append(self.__wifi)
+        dev.OPERATORS.append(self.__sys_op)
+        dev.OPERATORS.append(def_consumer)
+        self.__opc.setup(dev.OPERATORS)
         asyncio.create_task(self.__ntp_update())
         asyncio.create_task(self.__gc())
 
@@ -220,5 +214,5 @@ class Board:
     async def __setup_http(self):
         # TODO
         hw.log.debug("Setting up http ...")
-        app.run(host='0.0.0.0', port=hw.HTTP_PORT, loop_forever=False)
+        http_run(self.__opc)
 

@@ -29,7 +29,9 @@ class DefaultConsumer(Operator, Consumer):
         return self.__name
 
     async def consume(self, data):
-        self.__sensors.update(data)
+        d = data['d']
+        s = data['s']
+        self.__sensors[d] = s
         sleep(0)
 
     async def __get(self, _):

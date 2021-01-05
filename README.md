@@ -7,9 +7,11 @@
 
 > * 蓝牙和WIFI通讯，
 > * WIFI 配置可通过蓝牙或 AP实现
+> * WIFI 和 Internet 连接自动侦测，根据情况自动重连或等待外部 Internet 恢复
 > * MQTT 推送传感器数据或接受指令
+> * MQTT 自动重连
 > * HTTP Rest 服务提供对外数据和操作接口
-> * 各种通讯方式（蓝牙/MQTT/Rest）遵循统一的数据格式
+> * 各种通讯方式（蓝牙/MQTT/HTTP）遵循统一的数据格式
 
 * 通讯认证和加密保护
 * 支持类似 Unix Cron/AT的定时任务

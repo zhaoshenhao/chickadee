@@ -32,6 +32,7 @@ def result(c = 200, m = '', v = None):
     }
 
 INVALID_ARGS = result(400, "Invalid op args")
+AUTH_ERR = result(401, "Invalid token")
 
 op_lock = Lock()
 
@@ -46,6 +47,9 @@ class Controller:
     async def op(self, path, command, param):
         async with op_lock:
             return await self.__op(path, command, param)
+
+    def auth(self, token):
+        return True
 
     async def __op(self, path, command, param):
         '''
