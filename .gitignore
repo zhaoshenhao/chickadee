@@ -1,0 +1,5 @@
+*$py.class
+*.mpy
+mpy/
+untested/
+__pycache__/
