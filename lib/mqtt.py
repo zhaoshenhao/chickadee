@@ -9,6 +9,7 @@ from consumer import Consumer
 
 CMD_TOPIC = "c/" + DEVICE_NAME
 CONFIG_NAME = "/dat/mqtt.json"
+OP_LOG_TOPIC = 'o/' + DEVICE_NAME
 HOST = 'host'
 PORT = 'port'
 USER = 'user'
@@ -31,10 +32,6 @@ class Mqtt(ConfigOp, Consumer):
     async def consume(self, data):
         self.publish(data)
         sleep(0)
-
-    async def __msg_op(self, json):
-        r = await self.__opc.op_request(json)
-        self.publish(r)
 
     async def __get_info(self, _):
         v = self.get_info()
@@ -69,22 +66,30 @@ class Mqtt(ConfigOp, Consumer):
         try:
             json = loads(s)
             if not self.__auth(json):
-                self.publish(AUTH_ERR)
+                self.publish_op_log(None, None, AUTH_ERR)
                 return
             if self.__opc is not None:
-                create_task(self.__msg_op(json))
+                create_task(self.__opc.op_request(json))
         except Exception as e:
             m = "Process message failed: %r" % e
             log.error(m)
-            self.publish(result(500, m))
+            self.publish_op_log(None, None, result(500, m))
 
-    def publish(self, ret, retain = False, qos = 0):
+    def publish_op_log(self, p, c, ret):
+        x = {'p': p, 'c': c, 'r': ret}
+        self.publish(x, topic = OP_LOG_TOPIC)
+
+    def publish(self, ret, retain = False, qos = 0, topic = None):
         ret['i'] = DEVICE_NAME
-        return self.publish_str(dumps(ret), retain, qos)
+        return self.publish_str(dumps(ret), retain, qos, topic)
 
-    def publish_str(self, payload, retain = False, qos = 0):
+    def publish_str(self, payload, retain = False, qos = 0, topic = None):
+        if topic is None:
+            t = self.config_item(TOPIC)
+        else:
+            t = topic
         if self.is_connected():
-            return self.__client.publish(self.config_item(TOPIC), payload, retain, qos)
+            return self.__client.publish(t, payload, retain, qos)
         return None
 
     def config_item(self, name, def_val = None):
@@ -136,7 +141,6 @@ class Mqtt(ConfigOp, Consumer):
             return True
         self.disconnect()
         self.load(reload)
-        print(self.__config)
         self.__check_config()
         if self.__valid_config:
             if self.config_item(ENABLED, False):

@@ -47,10 +47,14 @@ class Controller:
     '''
     def __init__(self):
         self.commands = {}
+        self.__mqtt = None
 
     async def op(self, path, command, param):
         async with op_lock:
-            return await self.__op(path, command, param)
+            r = await self.__op(path, command, param)
+        if self.__mqtt is not None:
+            self.__mqtt.publish_op_log(path, command, r)
+        return r
 
     def auth(self, token):
         return True
@@ -93,6 +97,9 @@ class Controller:
     def setup(self, operators):
         for op in operators:
             self.commands.update(op.commands)
+
+    def set_mqtt(self, mqtt):
+        self.__mqtt = mqtt
 
 class Operator:
     '''

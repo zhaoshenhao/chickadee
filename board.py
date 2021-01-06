@@ -197,6 +197,7 @@ class Board:
             dev.OPERATORS.append(mqtt)
             dev.CONSUMERS.append(mqtt)
             mqtt.connect()
+            dev.opc.set_mqtt(mqtt)
 
     async def __setup_http(self):
         if hw.HTTP and hw.WIFI:

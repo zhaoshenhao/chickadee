@@ -38,8 +38,8 @@ async def index(request, response):
             r = await opc.op(p, m, d)
     except HTTPException as e:
         raise e
-    except: # NOSONAR
-        r = result(500, str(e))
+    except Exception as e1:
+        r = result(500, str(e1))
     code = r[CODE]
     if 200 <= code and code <= 299:
         v = r[VALUE]
