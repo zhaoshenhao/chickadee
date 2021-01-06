@@ -5,7 +5,7 @@ def one_time_job():
     op = {}
     op['p'] = 'sys/echo'
     op['c'] = 'set'
-    op['params'] = 'hi222'
+    op['a'] = 'hi222'
     job ={}
     job['name'] = 'onetime'
     job['schedule'] = "0-59/15 * * * * *"
@@ -13,23 +13,23 @@ def one_time_job():
     return job
 
 async def test1():
-    from op import OpCenter
+    from op import Controller
     from sys_op import SysOp
-    sch = Scheduler()
-    opc = OpCenter()
+    opc = Controller()
+    sch = Scheduler(opc)
     ops = []
     ops.append(sch)
     ops.append(SysOp(opc))
     opc.setup(ops)
-    sch.setup(opc)
+    sch.setup()
     await asyncio.sleep(3)
     x = await opc.op('cron/at', 'set', one_time_job())
-    print(x.to_json())
+    print(x)
     await asyncio.sleep(12)
     x = await opc.op('cron', 'delete', None)
-    print(x.to_json())
+    print(x)
     x = await opc.op('cron/at', 'delete', None)
-    print(x.to_json())
+    print(x)
     await asyncio.sleep(20)
 
 def test0():

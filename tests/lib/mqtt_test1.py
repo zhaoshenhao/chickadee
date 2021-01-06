@@ -2,7 +2,7 @@ from mqtt import Mqtt
 import logging
 from wifi import Wifi
 from hw import log
-from config import Config
+from sys_op import SysOp
 from op import Controller
 import uasyncio as asyncio
 from sensor import SensorProcess
@@ -17,7 +17,7 @@ def_consumer = DefaultConsumer()
 ops = []
 wifi = Wifi()
 ops.append(wifi)
-ops.append(Config())
+ops.append(SysOp(opc))
 ops.append(def_consumer)
 mqtt = Mqtt(opc)
 ops.append(mqtt)

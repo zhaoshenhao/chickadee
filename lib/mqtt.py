@@ -95,7 +95,7 @@ class Mqtt(ConfigOp, Consumer):
 
     def get_info(self):
         return {
-            'enabled': self.config_item(ENABLED, True),
+            'enabled': self.config_item(ENABLED, False),
             'connected': self.is_connected(),
             'config_valid': self.__valid_config,
             'with_auth': self.__with_auth,
@@ -139,7 +139,7 @@ class Mqtt(ConfigOp, Consumer):
         print(self.__config)
         self.__check_config()
         if self.__valid_config:
-            if self.config_item(ENABLED, True):
+            if self.config_item(ENABLED, False):
                 self.__client = MQTTClient(self.config_item(HOST), self.config_item(PORT))
             else:
                 log.info("MQTT disabled")

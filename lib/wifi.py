@@ -208,11 +208,11 @@ class Wifi(ConfigOp):
         log.debug("Setup wifi monitor")
         while hw.WIFI:
             try:
-                log.debug("Check wifi ...")
                 s = DEFAULT_300 # 设置一个默认值
                 if hw.WIFI_CHECK_TYPE != 0 and hw.WIFI_CHECK_INTVAL > 0 and hw.WIFI_CHECK_INTVAL < DEFAULT_300:
                     s = hw.WIFI_CHECK_INTVAL
                 await asleep(s)
+                log.debug("Check wifi ...")
                 if not self.check_connection():
                     log.info("Wifi is not ready, reconnecting...")
                     await self.async_connect(True)

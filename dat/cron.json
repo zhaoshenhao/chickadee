@@ -3,9 +3,9 @@
         "name": "test 1",
         "schedule": "0 * * * * *",
         "params": {
-            "path": "sys",
-            "cmd": "echo",
-            "args": "Hi"
+            "p": "sys/echo",
+            "c": "set",
+            "a": "Hi"
         }
     }
 ]

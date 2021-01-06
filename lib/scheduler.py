@@ -46,8 +46,8 @@ def cancel_task(t):
 
 @singleton
 class Scheduler(ConfigOp):
-    def __init__(self):
-        self._opc = None
+    def __init__(self, opc):
+        self.__opc = opc
         self.__cron = []
         self.__onetime = []
         ConfigOp.__init__(self, 'cron', CRON_FILE)
@@ -81,12 +81,12 @@ class Scheduler(ConfigOp):
 
     async def __reload_config(self): # NOSONAR
         try:
-            self.__load_cron()
+            self.setup()
             return result()
         except: #NOSONAR
             return result(500, "Reload config failed")
 
-    def __load_cron(self):
+    def setup(self):
         log.debug("Load cron jobs")
         self.cleanup_cron()
         js = self.load()
@@ -97,10 +97,6 @@ class Scheduler(ConfigOp):
             self.cleanup_cron()
             log.error("Load cron failed")
             raise e
-
-    def setup(self, opc):
-        self.__opc = opc
-        self.__load_cron()
 
     async def __cleanup_cron(self, _):
         await self.cleanup_cron()

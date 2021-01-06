@@ -37,7 +37,7 @@ client.set_message_callback(msg_cb)
 
 client.connect(hw.DEVICE_NAME, user = USER, password = PSWD)
 
-#client.subscribe(CMD_TOPIC)
+client.subscribe(CMD_TOPIC)
 
 print("ID: " + hw.DEVICE_NAME)
 

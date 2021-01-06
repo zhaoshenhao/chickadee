@@ -1,8 +1,9 @@
 # The device class contains all necessary generic device operation
-from time import time
-from machine import Pin,Timer,freq, reset
 import uasyncio as asyncio
 import hw, dev
+import ntptime
+from time import time
+from machine import Pin,Timer,freq, reset
 from primitives.pushbutton import Pushbutton
 from config import Config
 from sensor import SensorProcess
@@ -16,8 +17,8 @@ from sys_op import SysOp
 from relay import Relay
 from micropython import const, mem_info
 from gc import collect
-import ntptime
 from http import http_run
+from mqtt import Mqtt
 
 LOWER_POWER_FEQ = const(40000000)
 SYS_STATE_NONE = const(0)
@@ -44,18 +45,10 @@ SYS_STATE_TIMEOUT = const(30) # 系统状态超时，系统进入某种状态，
 @singleton
 class Board:
     def __init__(self):
-        self.__config = Config()
-        self.__sensor_process = None
         self.__sys_state = SYS_STATE_NONE
         self.__led = Relay(hw.WIFI_LED_PIN)
         self.__in_error_mode = False
         self.__state_start = 0
-        self.__opc = Controller()
-        self.__sys_op = SysOp(self.__opc)
-
-    @property
-    def config(self):
-        return self.__config
 
     async def start(self):
         try:
@@ -118,7 +111,7 @@ class Board:
             reset()
         elif self.__sys_state == SYS_STATE_RESET:
             hw.log.info("Reset from button")
-            self.__config.init_config()
+            dev.config.init_config()
             reset()
 
     async def __setup_button(self):
@@ -143,53 +136,46 @@ class Board:
     async def __setup_wifi(self):
         hw.log.debug("Setting up wifi ...")
         if hw.WIFI:
-            self.__wifi = Wifi(hostname = hw.DEVICE_NAME, pin = hw.WIFI_LED_PIN)
-            if self.__wifi.connect():
-                hw.log.debug(self.__wifi.get_info())
-                asyncio.create_task(self.__wifi.monitor())
+            wifi = Wifi(hostname = hw.DEVICE_NAME, pin = hw.WIFI_LED_PIN)
+            dev.OPERATORS.append(wifi)
+            if wifi.connect():
+                hw.log.debug(wifi.get_info())
             else:
-                # TODO setup AP
-                pass
+                hw.log.error("Wifi connectionf failed")
+            asyncio.create_task(wifi.monitor())
 
     async def __setup_ble(self):
         hw.log.debug("Setting up bluebooth ...")
         # TODO
         '''
-        #if self.__config.ble_enabled:
-        #    self._ble_uart = BleUart(self.__config.device_name)
+        #if dev.config.ble_enabled:
+        #    self._ble_uart = BleUart(dev.config.device_name)
         #    self._ble_uart.irq(self._op)
         '''
 
     async def __setup_devices(self):
         hw.log.debug("Setting up device ...")
-        self.__sensor_process = SensorProcess()
-        def_consumer = DefaultConsumer()
-        consumers = []
-        consumers.append(def_consumer)
-        self.__sensor_process.setup(consumers, dev.SENSORS)
-        dev.OPERATORS.append(self.__scheduler)
-        dev.OPERATORS.append(self.__config)
-        dev.OPERATORS.append(self.__wifi)
-        dev.OPERATORS.append(self.__sys_op)
-        dev.OPERATORS.append(def_consumer)
-        self.__opc.setup(dev.OPERATORS)
+        sensor_process = SensorProcess()
+        sensor_process.setup(dev.CONSUMERS, dev.SENSORS)
+        dev.opc.setup(dev.OPERATORS)
         asyncio.create_task(self.__ntp_update())
         asyncio.create_task(self.__gc())
 
     async def __ntp_update(self):
-        hw.log.debug("Setup ntp update job")
+        hw.log.debug("Starting ntp update job")
         while True:
             try:
                 await asyncio.sleep(hw.NTP_INTERVAL)
                 if hw.NTP:
-                    if self.__config.ntphost != None and self.__config.ntphost != ntptime.host:
-                        ntptime.host = self.__config.ntphost
+                    if dev.config.ntphost != None and dev.config.ntphost != ntptime.host:
+                        ntptime.host = dev.config.ntphost
                     hw.log.debug("Update time")
                     ntptime.settime()
             except: #NOSONAR
                 pass
 
     async def __gc(self):
+        hw.log.debug("Starting ntp update job")
         while True:
             try:
                 await asyncio.sleep(hw.GC_INTERVAL)
@@ -202,17 +188,18 @@ class Board:
 
     async def __setup_scheduler(self):
         hw.log.debug("Setting up cron ...")
-        self.__scheduler = Scheduler()
-        self.__scheduler.setup(self.__opc)
+        dev.scheduler.setup()
 
     async def __setup_mqtt(self):
-        from mqtt import MQTTClient
-        client = MQTTClient('192.168.1.1', port=1883)
         hw.log.debug("Setting up mqtt ...")
-        # TODO
+        if hw.MQTT and hw.WIFI:
+            mqtt = Mqtt(dev.opc)
+            dev.OPERATORS.append(mqtt)
+            dev.CONSUMERS.append(mqtt)
+            mqtt.connect()
 
     async def __setup_http(self):
-        # TODO
-        hw.log.debug("Setting up http ...")
-        http_run(self.__opc)
+        if hw.HTTP and hw.WIFI:
+            hw.log.debug("Setting up http ...")
+            http_run(dev.opc)
 

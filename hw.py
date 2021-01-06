@@ -16,7 +16,7 @@ WIFI_CHECK_HOST = "8.8.8.8" # 外部地址，可以通过config.json 里的 wifi
 # 是否启用低功耗蓝牙
 BLE_UART = True
 
-# 是否启用 MQTT（必须启用WIFI）
+# 是否启用 MQTT（必须启用WIFI）。该设置是硬件层面设置。用户可以通过 dat/mqtt.json 启用或关闭
 MQTT = True
 
 # 是否启用 HTTP服务（必须启用WIFI）
@@ -35,8 +35,7 @@ NTP_HOST = "pool.ntp.org"
 # NTP同步间隔（秒）
 NTP_INTERVAL = const(30)
 
-# 运行为异步模式。很多默认测试代码在非异步模式下测试
-ASYNC = True
+# 在日志里打印每次收集到的传感器数据
 PRINT_SENSOR_DATA = True
 
 # 垃圾收间隔
@@ -51,3 +50,6 @@ x = unique_id()
 MAC = "%x:%x:%x:%x:%x:%x" % unpack("BBBBBB",x)
 UNIQUE_ID =  "%x%x%x%x%x%x" % unpack("BBBBBB",x)
 DEVICE_NAME = TYPE + '-' + UNIQUE_ID
+
+# 硬件码，需要在烧录时使用，八位字母和数字
+HW_PIN = '12345678'

@@ -1,7 +1,7 @@
 import logging
 from wifi import Wifi
 from hw import log
-from config import Config
+#from config import Config
 from scheduler import Scheduler
 from sys_op import SysOp
 from consumer import DefaultConsumer
@@ -12,10 +12,10 @@ from op import Controller
 logging._level = logging.DEBUG
 opc = Controller()
 ops = []
-sch = Scheduler()
-sch.setup(opc)
+sch = Scheduler(opc)
+sch.setup()
 ops.append(Wifi())
-ops.append(Config())
+#ops.append(Config())
 ops.append(sch)
 ops.append(Relay(2))
 ops.append(SysOp(opc))

@@ -3,6 +3,9 @@ from op import Operator, result, GET, SET
 from file import load_json, dump_json
 from uasyncio import sleep
 
+'''
+系统文件的抽象类。提供基本的读取、写入、初始化、检查等基本功能
+'''
 class ConfigOp(Operator):
     def __init__(self, name, fn):
         self.__fn = fn
@@ -17,10 +20,13 @@ class ConfigOp(Operator):
 
     async def __set(self, c):
         self.__config = c
-        if self.__save():
-            return await self.__reload_config()
+        if self.__check_config():
+            if self.__save():
+                return await self.__reload_config()
+            else:
+                return result(500, "Save %s failed" % self.__fn)
         else:
-            return result(500, "Save %s failed" % self.__fn)
+            return result(400, "Invalid config, not saved")
 
     async def __get(self, _):
         v = self.load(True)
@@ -33,6 +39,9 @@ class ConfigOp(Operator):
             self.__load()
         return self.__config
 
+    def __check_config(self):
+        return True
+    
     def __init_defaults(self):
         return 0
 

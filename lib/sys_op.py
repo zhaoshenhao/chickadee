@@ -2,21 +2,59 @@
 import esp, esp32
 import hw
 from op import Operator, result, GET, SET
-from utils import singleton
+from utils import singleton, random_string
 from uasyncio import sleep, create_task
 from os import uname
 from sys import version
 from machine import reset, freq
+from config_op import ConfigOp
+
+LABEL = "label"
+SECRET = "secret"
+NTPHOST = "ntphost"
+CONFIG_FILE = "/dat/config.json"
 
 @singleton
-class SysOp(Operator):
+class SysOp(ConfigOp):
     def __init__(self, opc):
-        Operator.__init__(self, "sys")
-        self.add_command(self.__get, GET, 'info')
+        self.__opc = opc
+        self.__config = None
+        ConfigOp.__init__(self, 'sys', CONFIG_FILE)
+        self.commands.pop('sys/config:set') # 取消设置功能
+        self.add_command(self.__info, GET, 'info')
         self.add_command(self.__commands, GET, 'commands')
         self.add_command(self.__echo, SET, 'echo')
         self.add_command(self.__reboot, SET, 'reboot')
-        self.__opc = opc
+
+    @property
+    def ntphost(self):
+        if self.__config != None and NTPHOST in self.__config:
+            return self.__config[NTPHOST]
+        return hw.NTP_HOST
+
+    @property
+    def device_secret(self):
+        return self.__config[SECRET]
+
+    @property
+    def device_lable(self):
+        return self.__config[LABEL]
+
+    def __init_defaults(self, force = False):
+        changes = 0
+        if self.__config == None:
+            self.__config = {}
+        if SECRET not in self.__config or force:
+            self.__config[SECRET] = random_string(32)
+            changes += 1
+        if LABEL not in self.__config or force:
+            self.__config[LABEL] = self.device_name
+            changes += 1
+        return changes
+
+    def init_config(self, force = False):
+        if self.__init_defaults(force) > 0:
+            self.__save()
 
     async def __reboot(self, _):
         create_task(self.__delay_reboot())
@@ -26,7 +64,7 @@ class SysOp(Operator):
         await sleep(5)
         reset()
 
-    async def __get(self, _):
+    async def __info(self, _):
         v = {}
         v['sys-version'] = version
         v['uname'] = uname
