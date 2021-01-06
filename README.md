@@ -325,10 +325,10 @@ TODO
 {
     "host": "192.168.1.123",
     "port": 1833,
-    "user": "user-name",
-    "password": "password",
-    "sensors": "sensor-data-topic",
-    "operations": "operation-topic"
+    "user": "test",
+    "password": "test",
+    "topic": "sensors",
+    "enabled": true
 }
 ```
 

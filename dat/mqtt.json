@@ -1,0 +1,8 @@
+{
+    "host": "192.168.0.102",
+    "port": 1883,
+    "user": "test",
+    "password": "test",
+    "topic": "chickadee/sensors",
+    "enabled": true
+}

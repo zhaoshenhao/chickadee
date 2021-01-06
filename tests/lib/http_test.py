@@ -1,6 +1,6 @@
 import logging
 from wifi import Wifi
-from hw import HTTP_PORT, log
+from hw import log
 from config import Config
 from scheduler import Scheduler
 from sys_op import SysOp

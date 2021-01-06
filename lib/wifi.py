@@ -68,6 +68,16 @@ class Wifi(ConfigOp):
         schedule(self.connect(True))
         return result()
 
+    async def __reload_config(self): # NOSONAR
+        try: 
+            if await self.async_connect(True):
+                return result()
+            else:
+                return result(500, "Connection failed")
+        except Exception as e:
+            log.error("Reload wifi config failed: %r", e)
+            return result(500, "Reload wifi config failed: %r" % e)
+
     def get_info(self):
         return {
             "mac": MAC,

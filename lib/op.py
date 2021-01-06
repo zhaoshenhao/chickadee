@@ -1,4 +1,4 @@
-from uasyncio import Lock
+from uasyncio import Lock, sleep_ms
 from ujson import dumps, loads
 from hw import log
 from utils import singleton, is_str_empty
@@ -30,6 +30,10 @@ def result(c = 200, m = '', v = None):
         MESSAGE: m,
         VALUE: v
     }
+
+async def delayed_task(sec, func, tup_args):
+    await sleep_ms(sec)
+    func(*tup_args)
 
 INVALID_ARGS = result(400, "Invalid op args")
 AUTH_ERR = result(401, "Invalid token")

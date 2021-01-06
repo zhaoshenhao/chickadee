@@ -17,4 +17,11 @@ async def test():
     await aaf(1)
     await asyncio.sleep(5)
 
+def test2():
+    f(1)
+    f(2)
+    af(1)
+    aaf(1)
+
 asyncio.run(test())
+
