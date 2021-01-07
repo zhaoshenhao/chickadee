@@ -102,35 +102,43 @@
 2. set - 修改内容，映射到 HTTP POST、PUT
 3. delete - 删除内容，映射到 HTTP DELETE
 
-### 1.5.3 操作匹配
+### 1.5.4 操作匹配
 
-由于允许每个受控设备可以包含次级分设备，需要按层次结构生成路径接口来匹配操作。`Operator.add_command`提供相关的参数
+由于允许每个受控设备可以包含次级分设备，需要按层次结构生成路径接口来匹配操作，采用类似于U`URL`路径方式来组织。`Operator.add_command`提供了登记操作的方法。
 
 ```python
-    def add_command(self, handler, path = None, op = "get"):
+    def add_command(self, handler, op = GET, path = None):
 ```
+
+* `handler` - 是操作函数，必须接受一个传入参数
+* `op` - 操作必须是三中操作类型之一
+* `path` - 是该类的内部路径。每个操作类会有一个名字，最终路径是操作类的名称 + `/` + path
 
 比如 在 `sys_op.py` 里边又如下代码：
 
 ```python
-class SysOp(Operator):
+@singleton
+class SysOp(ConfigOp):
     def __init__(self, opc):
-        Operator.__init__(self, "sys")
-        self.add_command('info:get', self.__get)
-        self.add_command('paths:get', self.__paths)
-        self.add_command('devices:get', self.__devices)
-        self.add_command('echo:set', self.__echo)
-        self.add_command('reboot:set', self.__reboot)
+        self.__opc = opc
+        self.__config = None
+        ConfigOp.__init__(self, 'sys', CONFIG_FILE)
+        self.commands.pop('sys/config:set') # 取消设置功能
+        self.add_command(self.__info, GET, 'info')
+        self.add_command(self.__commands, GET, 'commands')
+        self.add_command(self.__echo, SET, 'echo')
+        self.add_command(self.__reboot, SET, 'reboot')
 ```
 
 这些代码会在 HTTP Rest 服务里提供如下 URL 路径和对应的 HTTP Method给外部客户
 
 ```bash
 /sys/info, GET
-/sys/path, GET
+/sys/commands, GET
 /sys/devices, GET
 /sys/echo, POST/PUT
 /sys/reboot, POST/PUT
+/sys/config, GET - 通过 ConfigOp 引入
 ```
 
 当内部调用 `Controller.op` 时，path 和 command 参数即对应上述内容
@@ -202,7 +210,7 @@ MQTT的配置只需使用 mqtt.py 内注册的 `set` 操作，上传合法的配
 * 在任何时候，都可用通过长按系统功能键的方式，在不同模式之间切换
 * 在各确认模式下，双击进行确认
 
-### 3.2 系统按钮操作
+### 3.3 系统按钮操作
 
 * 进入系统操作状态: 长按(按住超过5秒)，如果没有任何操作，10秒后解除回到原先状态
 * 连续长按，会依次进入不同确认状态：重启确认 -> WIFI 特殊配置 -> 重置确认
@@ -271,6 +279,62 @@ class Pir(IrqHProducer):
 使用 mpy_cross 编译二进制代码，并复制到 mpy 对应的目录下
 
 ### 5.4 制作固件
+
+TODO
+
+## 6 对外通讯
+
+### 6.1 基本设计
+
+[设备操作处理框架](#15-设备操作处理框架) 有一个基于异步方式统一得操作中心。所有操作必须先在操作中心注册，然后通过操作中心，向对外通讯接口(HTTP Rest/MQTT/蓝牙)提供一致的操作接口。所有对外通讯接口，提供一致的调用接口。
+
+注意：所有的内容读取，需要抽象为 GET 操作/方法。
+
+所有的对外操作都通过 `JSON` 格式实现，不同通讯接口，通讯协议由略微不同
+
+### 6.2 HTTP Rest API
+
+#### 6.2.1 操作映射
+
+* 所有操作会根据 `path` 生成对应的 `URL` 路径。外部可以使用对应的路径和 `HTTP Method` 对设备进行操作。比如可以通过下面的操作，获取全部的设备操作路径
+
+```bash
+$ curl -X GET -H 'token: testdata' -H 'Content-Type: application/json' 'http://192.168.0.123:8080/sys/commands'
+["mqtt/reconnect:set", "mqtt/config:get", "wifi/reconnect:set", "sys/commands:get", "wifi:get", "cron/at:delete", "sys/config:get", "mqtt/config:set", "cron/config:set", "cron/config:get", "relay:get", "wifi/config:set", "relay:set", "cron/at:set", "wifi/config:get", "sys/info:get", "sys/echo:set", "sensors:get", "cron:delete", "mqtt:get", "sys/reboot:set"]
+```
+
+* 所有的路径目前不支持 `URL` 参数
+
+#### 6.2.2 Token 和 传入数据
+
+* `HTTP Rest` 通讯中 `Token` 通过 HTTP 头 `token` 传递。
+* 参数必须符合[request 结构](#request)
+
+#### 6.2.3 返回结果
+
+* 如果成功，返回操作结果，可以是任何值或空
+* 如果失败，返回[result 结构](#result)和对应的 `HTTP` 状态码
+
+### 6.3 MQTT
+
+#### 6.3.1 MQTT 主题
+
+* 操作命令主题 - 固定主题，格式：c/device-name，设备会自动订阅该主题，并在认证后执行合法的命令
+* 操作日志主题 - 固定主题，格式：o/device-name，设备会自动把每次操作的结果发送到该主题，`qos=0`。这是检查内部操作（比如定时任务）/MQTT操作的结果唯一方式。
+* 传感器主题 - 传感器主题可以由用户配置。参加 [dat/mqtt.json](#datmqttjson)
+
+#### 6.3.2 Token 和 传入数据
+
+* 通过 MQTT 传输操作指令，必须把`Token`通过`"t"`属性插入[request 结构](#request)
+
+#### 6.3.3 返回结果
+
+返回结果通过`操作日志主题`返回：
+
+* 返回整个[result 结构](#result)，并且
+* 在里边通过`"i"`插入设备名称
+
+### 6.4 蓝牙
 
 TODO
 
