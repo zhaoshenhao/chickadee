@@ -6,7 +6,7 @@ import dht
 class Dht11(Producer):
     def __init__(self, pin):
         self._pin = pin
-        Producer.__init__(self, 'dht11', 60000)
+        Producer.__init__(self, 'dht11', 60000, 1000)
         self._dht = dht.DHT11(Pin(self._pin))
         self.add_sensor("temperature", self.get_temperature)
         self.add_sensor("humidity", self.get_humidity)

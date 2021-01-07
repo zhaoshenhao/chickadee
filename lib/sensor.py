@@ -49,13 +49,13 @@ class Producer:
     '''
     设备抽象类
     '''
-    def __init__(self, name, interval = 30000): # name must be [a-zA-Z_-], interval
+    def __init__(self, name, interval = 30000, delay = 100): # name must be [a-zA-Z_-], interval
         '''
         interval: 设备收集数据间隔，单位ms
         '''
         self.__sensors = []
         self.__prepare = None
-        self.__delay = 100 # ms
+        self.__delay = delay # ms
         self.__interval = interval
         self.__name = name
 
@@ -65,10 +65,13 @@ class Producer:
         '''
         log.debug("Start sensor data producer: %s", self.__name)
         while True:
-            vals = await self.async_sensor_values()
-            log.debug("Get sensor data")
-            await queue.put(vals)
-            await asyncio.sleep_ms(self.__interval)
+            try:
+                vals = await self.async_sensor_values()
+                log.debug("Get sensor data")
+                await queue.put(vals)
+                await asyncio.sleep_ms(self.__interval)
+            except Exception as e:
+                log.warning("Get sensor data failed: %r" % e)
 
     def add_sensor(self, name, handler):
         s = Sensor(name, handler)

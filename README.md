@@ -48,7 +48,7 @@
 3. 系统按钮检查并进入相应状态
 4. 其他一些系统任务，比如 NTP 时间同步，内存垃圾收集等
 
-主控程序通过 hw.py 和 dev.py 以及 config.py (dat/config.json的配置程序) 获取各种系统信息，并装配组件，运行系统。
+主控程序通过 hw.py 和 dev.py 以及 sys_op.py (dat/config.json的配置程序) 获取各种系统信息，并装配组件，运行系统。
 
 ### 1.4 传感器及信息处理框架
 
@@ -340,7 +340,28 @@ TODO
 
 ## 附录 1 常用系统操作接口列表
 
-TODO
+mqtt/reconnect:set - MQTT 重新连接
+mqtt/config:get - MQTT 配置读取
+mqtt/config:set - MQTT 配置修改
+mqtt:get - MQTT 状态读取
+wifi/reconnect:set
+sys/commands:get 
+wifi:get
+cron/at:delete
+sys/config:get
+cron/config:set
+cron/config:get
+relay:get
+wifi/config:set
+relay:set",
+cron/at:set",
+wifi/config:get",
+sys/info:get",
+sys/echo:set",
+sensors:get",
+cron:delete",
+mqtt:get",
+sys/reboot:set"
 
 ## 附录 2 常用数据结构
 
