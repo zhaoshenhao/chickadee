@@ -336,32 +336,68 @@ $ curl -X GET -H 'token: testdata' -H 'Content-Type: application/json' 'http://1
 
 ### 6.4 蓝牙
 
-TODO
+#### 6.4.1 蓝牙 UART 连接
+
+* 模拟了一个双工的蓝牙 UART，可以进行双向通讯
+* 一次只能由一个连接
+* 系统设置了一个认证限制，如果一个设备不能再 20 秒内完成认证，就会被端口，以备其他设备的连接
+
+#### 6.4.2 Token 和 传入数据
+
+* 必须是 `UTF-8` 格式数据，并且是 `JSON` 格式
+* 通过蓝牙传输操作指令，必须把`Token`通过`"t"`属性插入[request 结构](#request)
+
+#### 6.4.3 返回结果
+
+* 蓝牙的返回结果会通过 UART 立即返回。
+* 如果成功，返回操作结果，可以是任何值或空
+* 如果失败，返回[result 结构](#result)和对应的 `HTTP` 状态码
+
+#### 传感器数据
+
+* 系统默认把蓝牙作为传感器数据的消费者，如果由认证的蓝牙连接，传感器传感器数据会被定时传送给连接者
+* 系统会自动处理发送操作的锁机制，但是接收端必须要分别处理蓝牙指令的返回结果和传感器数据。这可以通过判别数据格式来完成。
 
 ## 附录 1 常用系统操作接口列表
+
+### MQTT
 
 mqtt/reconnect:set - MQTT 重新连接
 mqtt/config:get - MQTT 配置读取
 mqtt/config:set - MQTT 配置修改
 mqtt:get - MQTT 状态读取
-wifi/reconnect:set
-sys/commands:get 
-wifi:get
-cron/at:delete
-sys/config:get
-cron/config:set
-cron/config:get
-relay:get
-wifi/config:set
-relay:set",
-cron/at:set",
-wifi/config:get",
-sys/info:get",
-sys/echo:set",
-sensors:get",
-cron:delete",
-mqtt:get",
-sys/reboot:set"
+
+### WIFI
+
+wifi:get - 获取 WIFI 连接信息
+wifi/reconnect:set - WIFI 重新连接
+wifi/config:set - 获取 WIFI 配置
+wifi/config:get - 获取 WIFI 的配置
+
+### 系统
+
+sys/commands:get  - 获取系统命令列表
+sys/config:get - 获取自定义设备名和密钥
+sys/info:get - 获取系统各种设置
+sys/echo:set - 测试命令
+sys/reboot:set - 重启设备
+
+### 定时任务
+
+cron/at:delete - 删除全部一次性定时任务
+cron/config:set - 设置定时任务
+cron/config:get - 获取定时任务
+cron/at:set - 添加一个一次性任务
+cron:delete - 删除全部定时任务
+
+### 传感器
+
+sensors:get - 获取最新的全部传感器数据
+
+### 开关
+
+relay:get - 获取 relay（开关）的状态
+relay:set - 设置 relay（开关）的状态
 
 ## 附录 2 常用数据结构
 
@@ -447,7 +483,6 @@ def result(c = 0, m = '', v = None):
         MESSAGE: m,
         VALUE: v
     }
-
 ```
 
 ## 附录 3 常见问题
@@ -468,9 +503,13 @@ def result(c = 0, m = '', v = None):
 
 不会
 
+### Q5 通过蓝牙配置 Wifi
+
+只需要按照格式调用 `wifi/config:set`, 把 `dat/wifi.json` 的内容上传即可
+
 ### Q5 如何获取系统密钥
 
-系统密钥可用使用 `Config` 类中注册的 `get` 操作获取。首次获取，需要进入特殊配置模式
+系统密钥可用使用 `sys/config:get` 操作获取。首次获取，需要进入特殊配置模式
 
 ## 附录 4 各类通讯的长度限制
 
