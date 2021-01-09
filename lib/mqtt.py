@@ -1,7 +1,7 @@
 from mqtt_lib import MQTTClient
 from hw import DEVICE_NAME, log
 from config_op import ConfigOp
-from op import GET, SET, result, AUTH_ERR, Operator, delayed_task
+from op import GET, SET, result, AUTH_ERR, Operator, delayed_task, TOKEN
 from uasyncio import sleep, create_task
 from utils import singleton
 from ujson import loads, dumps
@@ -39,11 +39,11 @@ class Mqtt(ConfigOp, Consumer):
         return result(200, None, v)
 
     async def __reload_config(self): # NOSONAR
-        await delayed_task('5000', self.connect, (True, True))
+        await delayed_task(5000, self.connect, (True, True))
         return result(200, None, RECONNECT_MSG)
 
     async def __reconnect(self, _):
-        await delayed_task('5000', self.connect, (True))
+        await delayed_task(5000, self.connect, (True))
         return result(200, None, RECONNECT_MSG)
 
     def __suback_cb(self, msg_id, qos): #NOSONAR
@@ -55,10 +55,10 @@ class Mqtt(ConfigOp, Consumer):
             self.__client.subscribe(CMD_TOPIC)
 
     def __auth(self, json):
-        if 't' not in json:
+        if TOKEN not in json:
             log.warning("No token found")
             return False
-        return self.__opc.auth(json['t'])
+        return self.__opc.auth(json[TOKEN])
 
     def __msg_cb(self, topic, pay): #NOSONAR
         s = pay.decode("utf-8")
@@ -100,15 +100,15 @@ class Mqtt(ConfigOp, Consumer):
 
     def get_info(self):
         return {
-            'enabled': self.config_item(ENABLED, False),
+            ENABLED: self.config_item(ENABLED, False),
             'connected': self.is_connected(),
             'config_valid': self.__valid_config,
             'with_auth': self.__with_auth,
             'client-id': DEVICE_NAME,
-            'host': self.config_item(HOST),
-            'port': self.config_item(PORT, 1883),
-            'user': self.config_item(USER),
-            'password': self.config_item(PASSWORD),
+            HOST: self.config_item(HOST),
+            PORT: self.config_item(PORT, 1883),
+            USER: self.config_item(USER),
+            PASSWORD: self.config_item(PASSWORD),
             'sensor-topic': self.config_item(TOPIC),
             'command-topic': CMD_TOPIC
         }

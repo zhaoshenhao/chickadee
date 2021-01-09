@@ -25,11 +25,6 @@ from sys_op import SysOp
 config = SysOp(opc)
 OPERATORS.append(config)
 
-# 配置定时任务
-from scheduler import Scheduler
-scheduler = Scheduler(opc)
-OPERATORS.append(scheduler)
-
 # 配置传感器消费者
 from consumer import DefaultConsumer
 default_consumer = DefaultConsumer()

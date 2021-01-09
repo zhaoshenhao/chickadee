@@ -1,8 +1,8 @@
 # Helpers for generating BLE advertising payloads.
 
 from micropython import const
-import struct
-import bluetooth
+from struct import pack, unpack
+from bluetooth import UUID
 
 # Advertising payloads are repeated packets of the following form:
 #   1 byte data length (N + 1)
@@ -26,11 +26,11 @@ def advertising_payload(limited_disc=False, br_edr=False, name=None, services=No
 
     def _append(adv_type, value):
         nonlocal payload
-        payload += struct.pack("BB", len(value) + 1, adv_type) + value
+        payload += pack("BB", len(value) + 1, adv_type) + value
 
     _append(
         _ADV_TYPE_FLAGS,
-        struct.pack("B", (0x01 if limited_disc else 0x02) + (0x18 if br_edr else 0x04)),
+        pack("B", (0x01 if limited_disc else 0x02) + (0x18 if br_edr else 0x04)),
     )
 
     if name:
@@ -48,7 +48,7 @@ def advertising_payload(limited_disc=False, br_edr=False, name=None, services=No
 
     # See org.bluetooth.characteristic.gap.appearance.xml
     if appearance:
-        _append(_ADV_TYPE_APPEARANCE, struct.pack("<h", appearance))
+        _append(_ADV_TYPE_APPEARANCE, pack("<h", appearance))
 
     return payload
 
@@ -71,23 +71,9 @@ def decode_name(payload):
 def decode_services(payload):
     services = []
     for u in decode_field(payload, _ADV_TYPE_UUID16_COMPLETE):
-        services.append(bluetooth.UUID(struct.unpack("<h", u)[0]))
+        services.append(UUID(unpack("<h", u)[0]))
     for u in decode_field(payload, _ADV_TYPE_UUID32_COMPLETE):
-        services.append(bluetooth.UUID(struct.unpack("<d", u)[0]))
+        services.append(UUID(unpack("<d", u)[0]))
     for u in decode_field(payload, _ADV_TYPE_UUID128_COMPLETE):
-        services.append(bluetooth.UUID(u))
+        services.append(UUID(u))
     return services
-
-
-def demo():
-    payload = advertising_payload(
-        name="micropython",
-        services=[bluetooth.UUID(0x181A), bluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E")],
-    )
-    print(payload)
-    print(decode_name(payload))
-    print(decode_services(payload))
-
-
-if __name__ == "__main__":
-    demo()

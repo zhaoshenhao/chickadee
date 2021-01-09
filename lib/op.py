@@ -9,6 +9,7 @@ VALUE = 'v'
 COMMAND = 'c'
 PATH = 'p'
 ARGS = 'a'
+TOKEN = 't'
 OP_INFO = "Op %s"
 NOT_FOUND = "Op %s not found"
 CALL_ERROR =  "Op %s failed: %s"

@@ -1,7 +1,6 @@
 import logging
 from wifi import Wifi
 from hw import log
-#from config import Config
 from scheduler import Scheduler
 from sys_op import SysOp
 from consumer import DefaultConsumer

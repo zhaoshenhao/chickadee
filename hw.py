@@ -19,6 +19,9 @@ BLE_UART = True
 # 是否启用 MQTT（必须启用WIFI）。该设置是硬件层面设置。用户可以通过 dat/mqtt.json 启用或关闭
 MQTT = True
 
+# 是否启用 Scheduler
+SCHEDULER = True
+
 # 是否启用 HTTP服务（必须启用WIFI）
 HTTP = True
 HTTP_PORT = const(8080)
