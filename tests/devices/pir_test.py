@@ -10,9 +10,10 @@ def demo():
     def hi(arg):
         print("-------------------Hi", arg)
 
-    pir.set_handler(hi)
+    pir.handler = hi
+    pir.enable()
     time.sleep(20)
-    pir.remove_handler()
+    pir.handler = None
 
 if __name__ == "__main__":
     demo()

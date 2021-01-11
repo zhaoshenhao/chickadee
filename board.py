@@ -125,7 +125,7 @@ class Board:
         hw.log.debug("Setting up device ...")
         from sensor import SensorProcess
         sensor_process = SensorProcess()
-        sensor_process.setup(dev.CONSUMERS, dev.SENSORS)
+        sensor_process.setup(dev.CONSUMERS, dev.SENSORS, dev.IRQ_SENSORS)
         dev.opc.setup(dev.OPERATORS)
         create_task(self.__ntp_update())
         create_task(self.__gc())

@@ -44,7 +44,7 @@ class BLEUART(Consumer):
         self._rx_buffer = bytearray()
         self._opc = opc
         # Optionally add services=[_UART_UUID], but this is likely to make the payload too large.
-        self._payload = advertising_payload(name=name[:8], appearance=_ADV_APPEARANCE_GENERIC_COMPUTER)
+        self._payload = advertising_payload(name=name[:16], appearance=_ADV_APPEARANCE_GENERIC_COMPUTER)
         self._advertise()
 
     def _parse(self):
@@ -77,7 +77,6 @@ class BLEUART(Consumer):
         elif not self._opc.auth(t):
             self.send(AUTH_ERR)
         else:
-            print("Set auth")
             self._set_auth()
             create_task(self._call(d))
 

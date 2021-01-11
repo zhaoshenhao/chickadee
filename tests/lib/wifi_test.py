@@ -11,11 +11,11 @@ def demo():
     wifi.info()
 
 async def demo_async():
-    wifi = Wifi()
+    wifi = Wifi('ybb-home')
     print(wifi.check_wifi_config())
     print(await wifi.async_connect())
     await asyncio.sleep(1)
-    wifi.info()
+    print(wifi.get_info())
     asyncio.create_task(wifi.monitor())
     for i in range(0, 50):
         print(i)

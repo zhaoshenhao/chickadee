@@ -19,6 +19,8 @@ OPERATORS = []
 CONSUMERS = []
 # 传感器列表
 SENSORS = []
+# IRQ 传感器列表
+IRQ_SENSORS = []
 
 # 配置系统默认操作
 from sys_op import SysOp
@@ -34,12 +36,16 @@ OPERATORS.append(default_consumer)
 '''
 以下代码引入需要配置的设备
 '''
-# 额外可操控设备
+# 可操控设备
 from relay import Relay
 OPERATORS.append(Relay(2))
 
-# 额外传感器设备
+# 传感器设备
 from dht11 import Dht11
 SENSORS.append(Dht11(27))
+
+# IRQ 传感器设备
+from pir import Pir
+IRQ_SENSORS.append(Pir(22))
 
 state = 0

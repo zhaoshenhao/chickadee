@@ -37,8 +37,7 @@ class SensorProcess:
                 asyncio.create_task(d.produce(self.__sensor_queue))
         if irq_producers is not None and len(irq_producers) > 0:
             for d in irq_producers:
-                #TODO
-                pass
+                d.setup(self.__sensor_queue)
         # 添加处理器
         self.__consumers = consumers
         # 运行

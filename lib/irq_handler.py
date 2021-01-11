@@ -1,31 +1,40 @@
 # Abstract IRQ safe handler
-import micropython
-import machine
 from hw import log
+from machine import Pin
 
 class IrqHandler:
-    def __init__(self):
-        self._handler = None
-        self._handler_data = None
-        self._trigger = None
+    def __init__(self, trigger = Pin.IRQ_RISING):
+        self.handler = None
+        self.__handler_data = None
+        self.queue = None
+        self.trigger = trigger
+        self.__irq = None
     
-    def _check_irq(self, b):
-        return True
+    def _get_data(self, b): #NOSONAR
+        pass
 
-    def _callback(self, b):
-        if self._handler == None:
-            return
-        state = machine.disable_irq()
+    def __callback(self, b):
+        from micropython import schedule
+        from machine import disable_irq, enable_irq
+        log.debug("IRQ data: %r" % b)
+        state = disable_irq()
         try:
-            if self._check_irq(b):
-                micropython.schedule(self._handler, self._handler_data)
+            self._get_data(b)
+            if self.handler is not None:
+                schedule(self.handler, self.__handler_data)
+            if self.queue is not None:
+                from uasyncio import create_task
+                create_task(self.queue.put(self.__handler_data))
         except Exception as e:
-            log.error("Excetion while check and call irq handler")
-        machine.enable_irq(state)
+            log.error("Excetion while check and call irq handler: %r" % e)
+        enable_irq(state)
 
-    def _set_handler(self, fun, trigger): # Let child override and call this
-        self._handler = fun
-        self._trigger = trigger
+    def setup(self, queue):
+        self.queue = queue
+        self.enable()
 
-    def _remove_handler(self): # Let child override and call this
-        self._handler = None
+    def enable(self):
+        self.__irq.irq(self.__callback, self.trigger)
+
+    def disable(self):
+        self.__irq.irq(None, self.trigger)
