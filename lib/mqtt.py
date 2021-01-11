@@ -1,9 +1,9 @@
 from mqtt_lib import MQTTClient
 from hw import DEVICE_NAME, log
 from config_op import ConfigOp
-from op import GET, SET, result, AUTH_ERR, Operator, delayed_task, TOKEN
+from op import GET, SET, result, AUTH_ERR, Operator, TOKEN
 from uasyncio import sleep, create_task
-from utils import singleton
+from utils import singleton, delayed_task
 from ujson import loads, dumps
 from consumer import Consumer
 
@@ -39,11 +39,11 @@ class Mqtt(ConfigOp, Consumer):
         return result(200, None, v)
 
     async def __reload_config(self): # NOSONAR
-        await delayed_task(5000, self.connect, (True, True))
+        delayed_task(5000, self.connect, (True, True))
         return result(200, None, RECONNECT_MSG)
 
     async def __reconnect(self, _):
-        await delayed_task(5000, self.connect, (True))
+        delayed_task(5000, self.connect, (True))
         return result(200, None, RECONNECT_MSG)
 
     def __suback_cb(self, msg_id, qos): #NOSONAR
@@ -54,22 +54,12 @@ class Mqtt(ConfigOp, Consumer):
         if connected:
             self.__client.subscribe(CMD_TOPIC)
 
-    def __auth(self, json):
-        if TOKEN not in json:
-            log.warning("No token found")
-            return False
-        return self.__opc.auth(json[TOKEN])
-
     def __msg_cb(self, topic, pay): #NOSONAR
         s = pay.decode("utf-8")
         log.info('Received %s: %s' % (topic.decode("utf-8"), s))
         try:
             json = loads(s)
-            if not self.__auth(json):
-                self.publish_op_log(None, None, AUTH_ERR)
-                return
-            if self.__opc is not None:
-                create_task(self.__opc.op_request(json))
+            create_task(self.__opc.op_request(json))
         except Exception as e:
             m = "Process message failed: %r" % e
             log.error(m)
@@ -77,12 +67,16 @@ class Mqtt(ConfigOp, Consumer):
 
     def publish_op_log(self, p, c, ret):
         x = {'p': p, 'c': c, 'r': ret}
-        self.publish(x, topic = OP_LOG_TOPIC)
+        return self.publish(x, topic = OP_LOG_TOPIC)
 
     def publish(self, ret, retain = False, qos = 0, topic = None):
         ret['i'] = DEVICE_NAME
-        return self.publish_str(dumps(ret), retain, qos, topic)
-
+        try:
+            return self.publish_str(dumps(ret), retain, qos, topic)
+        except Exception as e:
+            log.error("Publish topic %s failed: %r" % (topic, e))
+            return None
+        
     def publish_str(self, payload, retain = False, qos = 0, topic = None):
         if topic is None:
             t = self.config_item(TOPIC)
@@ -133,7 +127,6 @@ class Mqtt(ConfigOp, Consumer):
             return self.__connect(force, reload)
         except Exception as e:
             log.warning("Mqtt connection exception: %r", e)
-            raise e
             return False
     
     def __connect(self, force = False, reload = False):

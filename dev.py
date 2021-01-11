@@ -41,3 +41,5 @@ OPERATORS.append(Relay(2))
 # 额外传感器设备
 from dht11 import Dht11
 SENSORS.append(Dht11(27))
+
+state = 0

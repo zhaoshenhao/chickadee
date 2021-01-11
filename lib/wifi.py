@@ -3,7 +3,7 @@ import hw
 from ustruct import unpack
 from time import time, sleep_ms
 from network import WLAN, STA_IF
-from utils import singleton, is_str_empty
+from utils import singleton, is_str_empty, delayed_task
 from relay import Relay
 from uping import ping_check
 from config_op import ConfigOp
@@ -17,46 +17,28 @@ TIMEOUT = "timeout"
 PASSWORD = "password"
 YBBHOME = "ybbhome"
 WIFI_CHECK_HOST = 'wifi_check_host'
+RECONNECT_WIFI = 'Reconnect Wifi after 5 seconds.'
 CONFIG_NAME = "/dat/wifi.json" # Config file
 DEFAULT_TMOUT = const(15)
 DEFAULT_300 = const(300)
 
 @singleton
 class Wifi(ConfigOp):
-    def __init__(self, hostname = None, pin = 2):
+    def __init__(self, hostname, pin = 2):
         self.__wlan = None
         self.__timeout = DEFAULT_TMOUT
         self.__led = Relay(pin)
-        self.__is_ok = False
-        self.__gw = None
-        self.__ip = None
-        self.__dns = None
+        self.is_ok = False
+        self.gw = None
+        self.ip = None
+        self.dns = None
         ConfigOp.__init__(self, 'wifi', CONFIG_NAME)
         self.add_command(self.__get_info, GET)
         self.add_command(self.__reconnect, SET, 'reconnect')
-
-        if hostname != None:
-            self.__hostname = hostname
-        else:
-            self.__hostname = YBBHOME
-
-    def config(self):
-        return self.__config
+        self.__hostname = hostname
 
     def is_connected(self):
         return self.__wlan != None and self.__wlan.isconnected()
-
-    def gw(self):
-        return self.__gw
-
-    def ip(self):
-        return self.__ip
-
-    def is_ok(self):
-        return self.__is_ok
-
-    def dns(self):
-        return self.__dns
 
     async def __get_info(self, _):
         v = self.get_info()
@@ -64,33 +46,25 @@ class Wifi(ConfigOp):
         return result(200, None, v)
 
     async def __reconnect(self, _):
-        from micropython import schedule
-        schedule(self.connect(True))
-        return result()
+        delayed_task(5000, self.async_connect, (True), True)
+        return result(200, None, RECONNECT_WIFI)
 
     async def __reload_config(self): # NOSONAR
-        try: 
-            if await self.async_connect(True):
-                return result()
-            else:
-                return result(500, "Connection failed")
-        except Exception as e:
-            log.error("Reload wifi config failed: %r", e)
-            return result(500, "Reload wifi config failed: %r" % e)
+        return await self.__reconnect(None)
 
     def get_info(self):
         return {
             "mac": MAC,
             "connected": self.is_connected(),
-            "connection tested": self.__is_ok,
+            "connection tested": self.is_ok,
             "hostname": self.__hostname,
-            "ip": self.__ip,
-            "gw": self.__gw,
-            "dns": self.__dns
+            "ip": self.ip,
+            "gw": self.gw,
+            "dns": self.dns
         }
 
     def check_wifi_config(self):
-        self.__config = self.load()
+        self.load()
         return not (self.__config == None or is_str_empty(self.__config[SSID]) or is_str_empty(self.__config[PASSWORD]))
 
     def disconnect(self):
@@ -127,34 +101,6 @@ class Wifi(ConfigOp):
                 break
         return self.__set_properties()
 
-    '''
-    同步连接系列函数
-    '''
-    def connect(self, force_rec = False):
-        if self.__wlan != None and self.__wlan.isconnected():
-            if not force_rec:
-                return True
-            else:
-                self.disconnect()
-                return self.__connect()
-        return self.__connect()
-
-    def __connect(self):
-        self.__connect_init()
-        return self.__connect_finish()
-
-    def __connect_finish(self):
-        start_time = time() # Check time
-        while not self.__wlan.isconnected():
-            sleep_ms(DEFAULT_300)
-            self.__led.on()
-            sleep_ms(DEFAULT_300)
-            self.__led.off()
-            if time()-start_time > self.__timeout:
-                log.error("Wifi connection timeout: %d", self.__timeout)
-                break
-        return self.__set_properties()
-
     def __connect_init(self):
         self.check_wifi_config()
         if self.__config == None:
@@ -175,18 +121,17 @@ class Wifi(ConfigOp):
     def __set_properties(self):
         if self.__wlan.isconnected():
             log.info('network information: %s', str(self.__wlan.ifconfig()))
-            (self.__ip, _, self.__gw, self.__dns) = self.__wlan.ifconfig()
-            self.__is_ok = True
+            (self.ip, _, self.gw, self.dns) = self.__wlan.ifconfig()
+            self.is_ok = True
             self.__led.on()
-            return True
         else:
-            self.__ip = None
-            self.__gw = None
-            self.__dns = None
-            self.__is_ok = False
+            self.ip = None
+            self.gw = None
+            self.dns = None
+            self.is_ok = False
             self.__wlan = None
-            self.__len.off
-            return False
+            self.__len.off()
+        return self.is_ok
 
     def check_connection(self):
         if hw.WIFI_CHECK_TYPE == 0:
@@ -208,11 +153,7 @@ class Wifi(ConfigOp):
         log.debug("Setup wifi monitor")
         while hw.WIFI:
             try:
-                s = DEFAULT_300 # 设置一个默认值
-                if hw.WIFI_CHECK_TYPE != 0 and hw.WIFI_CHECK_INTVAL > 0 and hw.WIFI_CHECK_INTVAL < DEFAULT_300:
-                    s = hw.WIFI_CHECK_INTVAL
-                await asleep(s)
-                log.debug("Check wifi ...")
+                await asleep(hw.WIFI_CHECK_INTVAL)
                 if not self.check_connection():
                     log.info("Wifi is not ready, reconnecting...")
                     await self.async_connect(True)

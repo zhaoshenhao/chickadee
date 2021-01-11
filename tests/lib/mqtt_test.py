@@ -1,7 +1,7 @@
 from mqtt_lib import MQTTClient
 import hw
 import time
-from wifi import Wifi
+from wifi_sync import WifiSync
 
 SENSOR_TOPIC = "chickadee/sensors"
 CMD_TOPIC = "c/" + hw.DEVICE_NAME
@@ -25,7 +25,7 @@ def msg_cb(topic, pay):
     print('Received %s: %s' % (topic.decode("utf-8"), pay.decode("utf-8")))
 
 ###### Main
-wifi = Wifi()
+wifi = WifiSync('ybb-home')
 wifi.connect()
 
 client = MQTTClient(HOST, port=PORT)
@@ -36,8 +36,6 @@ client.set_suback_callback(suback_cb)
 client.set_message_callback(msg_cb)
 
 client.connect(hw.DEVICE_NAME, user = USER, password = PSWD)
-
-client.subscribe(CMD_TOPIC)
 
 print("ID: " + hw.DEVICE_NAME)
 

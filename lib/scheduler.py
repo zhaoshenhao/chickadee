@@ -1,25 +1,3 @@
-'''
-系统定时任务执行器（定时器）
-基于 https://github.com/peterhinch/micropython-async/blob/master/v3/docs/SCHEDULE.md
-
-基本设计:
-1. 使用类似Unix cron的方式定义定时任务，精度到秒
-2. 定时任务以cron.json的格式保持如下
-[
-    {
-        "name": "test 1",                名称
-        "schedule": "* * * * * *",       类似Unix-cron的定时：sec min hr day mon wday
-        "params": {                      参数
-            "device": "info",            操作器（Operator），参见op.py
-            "command": "echo",                操作（Command），参见op.py
-            "params": "Hi"                 参数（必须是op接受参数）
-        }
-    }
-]
-3. 定时任务器接受一次性任务，格式如同cron.json里的单个任务，但会被设定为只被执行一次
-4. 定时器是一个Operator，支持如下命令：set，set，set-one-time-job，delete-one-time-jobs，delete-crons(清除运行的Cron和保持的cron文件
-'''
-
 import uasyncio as asyncio
 from ure import compile
 from sched.cron import cron
@@ -62,7 +40,7 @@ class Scheduler(ConfigOp):
 
     async def op(self, params):
         log.debug("Run scheduled job with param: %s" % params)
-        x = await self.__opc.op_request(params)
+        x = await self.__opc.op_request(params, False)
         if x[CODE] == 200:
             log.info("Run scheduled job done: %s" % x)
         else:
@@ -78,7 +56,7 @@ class Scheduler(ConfigOp):
         else:
             t = asyncio.create_task(schedule(self.op, p, secs = sec, mins = m, hrs = hr, mday = mday, month = mon, wday = wday))
             self.__cron.append(t)
-
+        
     async def __reload_config(self): # NOSONAR
         try:
             self.setup()
@@ -87,36 +65,31 @@ class Scheduler(ConfigOp):
             return result(500, "Reload config failed")
 
     def setup(self):
-        log.debug("Load cron jobs")
-        self.cleanup_cron()
-        js = self.load()
         try:
+            log.debug("Load cron jobs")
+            self.cleanup_cron()
+            js = self.load()
             for j in js:
                 self.__create_scheduler(j, False)
         except Exception as e:
+            log.error("Load cron failed %r" % e)
             self.cleanup_cron()
-            log.error("Load cron failed")
-            raise e
 
     async def __cleanup_cron(self, _):
-        await self.cleanup_cron()
+        await self.cleanup_cron(True)
         return result()
 
-    async def cleanup_cron(self):
+    async def cleanup_cron(self, empty_cfg = False):
         log.debug("Clean up cron job")
         if self.__cron is not None and len(self.__cron) > 0:
             for t in self.__cron:
                 cancel_task(t)
             self.__cron.clear()
         self.__cron = []
-        await self.__set([])
+        if empty_cfg:
+            await self.__set([])
 
     async def __cleanup_onetime(self, _):
-        self.cleanup_onetime()
-        await asyncio.sleep(0)
-        return result()
-
-    async def cleanup_onetime(self):
         log.debug("Clean up one time job")
         if self.__onetime is not None and len(self.__onetime) > 0:
             for t in self.__onetime:
@@ -124,6 +97,7 @@ class Scheduler(ConfigOp):
             self.__onetime.clear()
             self.__onetime = []
         await asyncio.sleep(0)
+        return result()
 
 def error(item, val = None):
     if val is None:

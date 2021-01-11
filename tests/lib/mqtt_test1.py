@@ -15,13 +15,14 @@ sp = SensorProcess()
 def_consumer = DefaultConsumer()
 
 ops = []
-wifi = Wifi()
+wifi = Wifi('ybb-home')
 ops.append(wifi)
 ops.append(SysOp(opc))
 ops.append(def_consumer)
 mqtt = Mqtt(opc)
 ops.append(mqtt)
 opc.setup(ops)
+opc.set_mqtt(mqtt)
 
 consumers = []
 consumers.append(def_consumer)
@@ -31,7 +32,7 @@ sp.setup(consumers, dev.SENSORS)
 print(opc.commands.keys())
 
 async def test():
-    wifi.connect()
+    await wifi.async_connect()
     print(mqtt.get_info())
     mqtt.connect()
     print(mqtt.get_info())

@@ -71,7 +71,10 @@ class BLEUART(Consumer):
 
     def _handle(self):
         t, d = self._parse()
-        if t is None or not self._opc.auth(t):
+        tm = self._opc.tm_auth(t)
+        if tm is not None:
+            self.send(tm)
+        elif not self._opc.auth(t):
             self.send(AUTH_ERR)
         else:
             print("Set auth")
@@ -146,7 +149,7 @@ class BLEUART(Consumer):
 
     async def _call(self, data):
         try:
-            r = await self._opc.op_request(data)
+            r = await self._opc.op_request(data, False)
             self.send(r)
         except Exception as e:
             msg = "Call failed %r" % e

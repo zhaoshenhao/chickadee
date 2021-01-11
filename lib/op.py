@@ -17,6 +17,7 @@ JSON_ERROR = "Invalid json string: %s.\n%s"
 SET = 'set'
 GET = 'get'
 DELETE = 'delete'
+GET_TM = 'get-tm'
 
 def request(p, c, a):
     return {
@@ -32,10 +33,6 @@ def result(c = 200, m = '', v = None):
         VALUE: v
     }
 
-async def delayed_task(sec, func, tup_args):
-    await sleep_ms(sec)
-    func(*tup_args)
-
 INVALID_ARGS = result(400, "Invalid op args")
 AUTH_ERR = result(401, "Invalid token")
 
@@ -50,41 +47,61 @@ class Controller:
         self.commands = {}
         self.__mqtt = None
 
-    async def op(self, path, command, param):
-        async with op_lock:
-            r = await self.__op(path, command, param)
+    async def op(self, token, path, command, param, req_auth = True):
+        '''
+        操作处理
+        req_auth: 内部调用设置为 False
+        '''
+        r = None
+        if req_auth:
+            tm = self.tm_auth(token)
+            if tm is not None:
+                r = tm
+            if not self.auth(token):
+                r = AUTH_ERR
+        if r is None:
+            async with op_lock:
+                try:
+                    r = await self.int_op(path, command, param)
+                except Exception as e:
+                    msg = CALL_ERROR % (path + ':' + command, e)
+                    log.error(msg)
+                    r = result(500, msg)
         if self.__mqtt is not None:
             self.__mqtt.publish_op_log(path, command, r)
         return r
 
     def auth(self, token):
-        return True
+        if token is None:
+            return False
+        return True # TODO
 
-    async def __op(self, path, command, param):
+    def tm_auth(self, token):
+        '''
+        检查是否是特殊Token，如果是，返回时间戳
+        '''
+        try:
+            if GET_TM == token.lower():
+                from utime import time
+                return result(200, None, {"tm": time()})
+        except: # NOSONAR
+            pass
+        return None
+
+    async def int_op(self, path, command, param):
         '''
         显式调用，传入operator，command 和参数，适合REST格式。参数必须时command接受的Json格式
+        无需认证
         '''
         p = path + ":" + command
         log.debug(OP_INFO, p)
         if p in self.commands:
             h = self.commands[p]
-            try:
-                return await h(param)
-            except Exception as e:
-                return result(500, CALL_ERROR % (p, e))
+            return await h(param)
         else:
             return result(404, NOT_FOUND % p)
 
-    async def op_str(self, request):
-        '''
-        处理 Json String 的请求
-        '''
-        try:
-            return await self.op_request(loads(request))
-        except Exception as e:
-            return result(400, JSON_ERROR % request, e)
-
-    async def op_request(self, request):
+    async def op_request(self, request, req_auth = True):
         '''
         处理类似Json的请求，只使用List/Dict/基础类型
         '''
@@ -93,7 +110,10 @@ class Controller:
         cmd = request[COMMAND]
         path = request[PATH]
         p = request[ARGS]
-        return await self.op(path, cmd, p)
+        t = None
+        if req_auth and TOKEN in request:
+            t = request[TOKEN]
+        return await self.op(t, path, cmd, p, req_auth)
 
     def setup(self, operators):
         for op in operators:

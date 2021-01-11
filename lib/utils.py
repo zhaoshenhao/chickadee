@@ -60,3 +60,21 @@ def set_gc():
     from gc import threshold, mem_free, mem_alloc
     threshold(mem_free() // 4 + mem_alloc())
 
+'''
+Run task after x ms
+Note: func should NOT be coro
+'''
+def delayed_task(sec, func, tup_args, is_coro = False):
+    from uasyncio import sleep_ms, create_task
+    async def __task(sec, func, tup_args):
+        await sleep_ms(sec)
+        func(*tup_args)
+
+    async def __coro_task(sec, func, tup_args):
+        await sleep_ms(sec)
+        await func(*tup_args)
+    
+    if is_coro:
+        create_task(__coro_task(sec, func, tup_args))
+    else:
+        create_task(__task(sec, func, tup_args))

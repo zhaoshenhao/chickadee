@@ -15,19 +15,19 @@ def one_time_job():
 
 async def test(opc):
     import ujson
-    x = await opc.op('sys/config', 'get', None)
+    x = await opc.int_op('sys/config', 'get', None)
     print(x)
-    x = await opc.op('wifi/config', 'get', None)
+    x = await opc.int_op('wifi/config', 'get', None)
     print(x)
-    x = await opc.op('cron/config', 'get', None)
+    x = await opc.int_op('cron/config', 'get', None)
     print(x)
-    x = await opc.op('sys/info', 'get', None)
+    x = await opc.int_op('sys/info', 'get', None)
     print(x)
     r = request('sys/echo', 'set', 'Hi')
-    x = await opc.op_request(r)
+    x = await opc.op_request(r, False)
     print(x)
     r = request('cron/at', 'set', one_time_job())
-    x = await opc.op_request(r)
+    x = await opc.op_request(r, False)
     print(x)
     asyncio.sleep(1)
 
@@ -36,13 +36,10 @@ opc = Controller()
 ops = []
 
 from wifi import Wifi
-ops.append(Wifi())
-
-from config import Config
-ops.append(Config())
+ops.append(Wifi('ybb-home'))
 
 from scheduler import Scheduler
-ops.append(Scheduler())
+ops.append(Scheduler(opc))
 
 from sys_op import SysOp
 ops.append(SysOp(opc))

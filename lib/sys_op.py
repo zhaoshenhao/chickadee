@@ -8,6 +8,7 @@ from os import uname
 from sys import version
 from machine import reset, freq
 from config_op import ConfigOp
+from utime import time
 
 LABEL = "label"
 SECRET = "secret"
@@ -67,7 +68,7 @@ class SysOp(ConfigOp):
     async def __info(self, _):
         v = {}
         v['sys-version'] = version
-        v['uname'] = uname
+        v['uname'] = uname()
         v['frequence'] = freq()
         v['unique-id'] = hw.UNIQUE_ID
         v['flash-size'] = esp.flash_size()
@@ -87,6 +88,7 @@ class SysOp(ConfigOp):
         v['mac-address'] = hw.MAC
         v['ntp-host'] = hw.NTP_HOST
         v['ntp-interval'] = hw.NTP_INTERVAL
+        v['time'] = time()
         await sleep(0)
         return result(200, None, v)
 

@@ -19,7 +19,6 @@ async def parse_request(req):
         m = SET
     elif req.method == BDELETE:
         m = DELETE
-    #req.read_headers([TOKEN])
     p = req.path.decode("utf-8")[1:]
     q = req.query_string
     t = None
@@ -32,12 +31,7 @@ async def parse_request(req):
 async def index(request, response):
     try:
         t, p, m, d, q = await parse_request(request)
-        if not opc.auth(t):
-            r = AUTH_ERR
-        else:
-            r = await opc.op(p, m, d)
-    except HTTPException as e:
-        raise e
+        r = await opc.op(t, p, m, d)
     except Exception as e1:
         r = result(500, str(e1))
     code = r[CODE]

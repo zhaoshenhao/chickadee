@@ -7,10 +7,10 @@ from primitives.pushbutton import Pushbutton
 from utils import singleton, set_gc
 from micropython import const, mem_info
 
-LOWER_POWER_FEQ = const(40000000)
+LOWER_POWER_FEQ = const(80000000)
 SYS_STATE_NONE = const(0)
 SYS_STATE_REBOOT = const(1)
-SYS_STATE_WIFI = const(2)
+SYS_STATE_CONFIG = const(2)
 SYS_STATE_RESET = const(3)
 SYS_STATE_TIMEOUT = const(30) # 系统状态超时，系统进入某种状态，比如重启，没有下一步操作，超时后返回常规状态
 
@@ -18,7 +18,6 @@ SYS_STATE_TIMEOUT = const(30) # 系统状态超时，系统进入某种状态，
 class Board:
     def __init__(self):
         from relay import Relay
-        self.__sys_state = SYS_STATE_NONE
         self.__led = Relay(hw.WIFI_LED_PIN)
         self.__in_error_mode = False
         self.__state_start = 0
@@ -45,8 +44,7 @@ class Board:
             collect()
             hw.log.info("Device started.")
         except Exception as e:
-            hw.log.error("Start device failed! Exception: %s", e)
-            hw.log.info("Entering error mode")
+            hw.log.error("Start device failed! Exception: %s\nEntering error mode.", e)
             freq(LOWER_POWER_FEQ)
             self.__in_error_mode = True
             self.__setup_led()
@@ -55,9 +53,11 @@ class Board:
 
     def __setup_led(self):
         self.__led.stop_async_blink()
-        if self.__sys_state == SYS_STATE_REBOOT:
+        if dev.state == SYS_STATE_REBOOT:
+            create_task(self.__led.async_blink(300, 300))
+        elif dev.state == SYS_STATE_CONFIG:
             create_task(self.__led.async_blink(200, 200))
-        elif self.__sys_state == SYS_STATE_RESET:
+        elif dev.state == SYS_STATE_RESET:
             create_task(self.__led.async_blink(100, 100))
         elif self.__in_error_mode:
             create_task(self.__led.async_blink(100, 5000))
@@ -67,12 +67,14 @@ class Board:
         配置长按操作
         '''
         self.__state_start = time()
-        if self.__sys_state == SYS_STATE_NONE:
-            self.__sys_state = SYS_STATE_REBOOT
-        elif self.__sys_state == SYS_STATE_REBOOT:
-            self.__sys_state = SYS_STATE_RESET
+        if dev.state == SYS_STATE_NONE:
+            dev.state = SYS_STATE_REBOOT
+        elif dev.state == SYS_STATE_REBOOT:
+            dev.state = SYS_STATE_CONFIG
+        elif dev.state == SYS_STATE_CONFIG:
+            dev.state = SYS_STATE_RESET
         else:
-            self.__sys_state = SYS_STATE_NONE
+            dev.state = SYS_STATE_NONE
             self.__state_start = 0
         self.__setup_led()
 
@@ -80,12 +82,12 @@ class Board:
         '''
         配置短按操作
         '''
-        if self.__sys_state == SYS_STATE_REBOOT:
+        if dev.state == SYS_STATE_REBOOT:
             hw.log.info("Reboot from button")
             reset()
-        elif self.__sys_state == SYS_STATE_RESET:
+        elif dev.state == SYS_STATE_RESET:
             hw.log.info("Reset from button")
-            dev.config.init_config()
+            dev.config.init_config() # TODO
             reset()
 
     async def __setup_button(self):
@@ -104,7 +106,7 @@ class Board:
                 if now - self.__state_start > SYS_STATE_TIMEOUT:
                     hw.log.debug("Clean up state")
                     self.__state_start = 0
-                    self.__sys_state = SYS_STATE_NONE
+                    dev.state = SYS_STATE_NONE
                     self.__setup_led()
 
     async def __setup_wifi(self):
@@ -113,7 +115,7 @@ class Board:
             from wifi import Wifi
             wifi = Wifi(hostname = hw.DEVICE_NAME, pin = hw.WIFI_LED_PIN)
             dev.OPERATORS.append(wifi)
-            if wifi.connect():
+            if await wifi.async_connect():
                 hw.log.debug(wifi.get_info())
             else:
                 hw.log.error("Wifi connectionf failed")
@@ -147,11 +149,11 @@ class Board:
         from gc import collect
         while True:
             try:
-                await sleep(hw.GC_INTERVAL)
                 hw.log.debug("GC")
                 mem_info()
                 collect()
                 mem_info()
+                await sleep(hw.GC_INTERVAL)
             except Exception as e:
                 hw.log.error("GC exception %s", e)
 
