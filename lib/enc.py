@@ -6,7 +6,6 @@ MODE_CBC = const(2)
 MODE_CTR = const(6)
 BLOCK_SIZE = const(16)
 
-
 def pad(data_to_pad, block_size = BLOCK_SIZE):
     padding_len = block_size-len(data_to_pad)%block_size
     padding = chr(padding_len)*padding_len
