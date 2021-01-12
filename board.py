@@ -1,11 +1,14 @@
 # The device class contains all necessary generic device operation
-from uasyncio import create_task, sleep, get_event_loop
-import hw, dev
+from gc import collect
 from time import time
-from machine import Pin,Timer,freq, reset
+from machine import Pin,freq, reset
+from uasyncio import create_task, sleep, get_event_loop
 from primitives.pushbutton import Pushbutton
 from utils import singleton, set_gc
 from micropython import const, mem_info
+from relay import Relay
+import hw
+import dev
 
 LOWER_POWER_FEQ = const(80000000)
 SYS_STATE_NONE = const(0)
@@ -17,7 +20,6 @@ SYS_STATE_TIMEOUT = const(30) # 系统状态超时，系统进入某种状态，
 @singleton
 class Board:
     def __init__(self):
-        from relay import Relay
         self.__led = Relay(hw.WIFI_LED_PIN)
         self.__in_error_mode = False
         self.__state_start = 0
@@ -25,7 +27,6 @@ class Board:
     async def start(self):
         try:
             hw.log.info("Starting device...")
-            from gc import collect
             set_gc()
             collect()
             await self.__setup_button()
@@ -43,7 +44,7 @@ class Board:
             await self.__setup_devices()
             collect()
             hw.log.info("Device started.")
-        except Exception as e:
+        except BaseException as e:
             hw.log.error("Start device failed! Exception: %s\nEntering error mode.", e)
             freq(LOWER_POWER_FEQ)
             self.__in_error_mode = True
@@ -85,6 +86,11 @@ class Board:
         if dev.state == SYS_STATE_REBOOT:
             hw.log.info("Reboot from button")
             reset()
+        elif dev.state == SYS_STATE_CONFIG:
+            from wifi_ap import WifiAp
+            ap = WifiAp()
+            ap.start_ap()
+            hw.log.info("Ap network: %r", ap.get_info())
         elif dev.state == SYS_STATE_RESET:
             hw.log.info("Reset from button")
             dev.config.init_config() # TODO
@@ -137,16 +143,15 @@ class Board:
                 await sleep(hw.NTP_INTERVAL)
                 if hw.NTP:
                     import ntptime
-                    if dev.config.ntphost != None and dev.config.ntphost != ntptime.host:
+                    if dev.config.ntphost is not None and dev.config.ntphost != ntptime.host:
                         ntptime.host = dev.config.ntphost
                     hw.log.debug("Update time")
                     ntptime.settime()
-            except: #NOSONAR
+            except: #pylint: disable=bare-except
                 pass
 
     async def __gc(self):
         hw.log.debug("Starting ntp update job")
-        from gc import collect
         while True:
             try:
                 hw.log.debug("GC")
@@ -154,7 +159,7 @@ class Board:
                 collect()
                 mem_info()
                 await sleep(hw.GC_INTERVAL)
-            except Exception as e:
+            except BaseException as e:
                 hw.log.error("GC exception %s", e)
 
     async def __setup_scheduler(self):

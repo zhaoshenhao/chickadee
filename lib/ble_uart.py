@@ -1,11 +1,11 @@
 from bluetooth import UUID, BLE
 from ble_advertising import advertising_payload
 from micropython import const
-from hw import log
-from json import loads, dumps
+from ujson import loads, dumps
 from op import AUTH_ERR, TOKEN, result
 from uasyncio import create_task, sleep
 from consumer import Consumer
+from hw import log
 
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
@@ -34,6 +34,7 @@ AUTH_FAILED_COUNT = 10
 
 class BLEUART(Consumer):
     def __init__(self, opc, name="ybb", rxbuf=1024):
+        Consumer.__init__(self)
         self._ble = BLE()
         self._ble.active(True)
         self._ble.irq(self._irq)
@@ -56,18 +57,18 @@ class BLEUART(Consumer):
             if TOKEN not in json:
                 return None, json
             return json[TOKEN], json
-        except Exception as e:
-            log.debug("Invalid request: %s" % e)
+        except BaseException as e: #NOSONAR
+            log.debug("Invalid request: %s" , e)
             return None, None
-    
+
     def send(self, r):
         try:
             if not self.is_authed():
                 log.debug("No authenticated central")
                 return
             self.write(dumps(r))
-        except Exception as e:
-            log.debug("Send failed: %r" % r)
+        except BaseException as e: #NOSONAR
+            log.debug("Send failed: %r" , e)
 
     def _handle(self):
         t, d = self._parse()
@@ -109,9 +110,9 @@ class BLEUART(Consumer):
     def read(self, sz=None):
         if not sz:
             sz = len(self._rx_buffer)
-        result = self._rx_buffer[0:sz]
+        ret = self._rx_buffer[0:sz]
         self._rx_buffer = self._rx_buffer[sz:]
-        return result
+        return ret
 
     def write(self, data, authed = False):
         for conn_handle in self._connections:
@@ -150,7 +151,7 @@ class BLEUART(Consumer):
         try:
             r = await self._opc.op_request(data, False)
             self.send(r)
-        except Exception as e:
+        except BaseException as e: #NOSONAR
             msg = "Call failed %r" % e
             log.debug(msg)
             self.send(result(500, msg))
@@ -164,7 +165,7 @@ class BLEUART(Consumer):
             try:
                 sleep(1)
                 self.check_auth()
-            except: # NOSONAR
+            except: # NOSONAR # pylint: disable=W0702
                 pass
 
     async def consume(self, data):

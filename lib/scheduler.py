@@ -1,10 +1,9 @@
-import uasyncio as asyncio
-from ure import compile
-from sched.cron import cron
 from sched.sched import schedule
 from utils import singleton
 from config_op import ConfigOp
 from op import result, CODE, SET, DELETE
+import uasyncio as asyncio
+from ure import compile #pylint: disable=redefined-builtin
 from hw import log
 
 SINGLE = compile(r"^\d+$")
@@ -19,7 +18,7 @@ def cancel_task(t):
     try:
         if t is not None:
             t.cancel()
-    except Exception as e: # NOSONAR
+    except: #NOSONAR #pylint: disable=bare-except
         pass
 
 @singleton
@@ -34,17 +33,17 @@ class Scheduler(ConfigOp):
         self.add_command(self.__cleanup_onetime, DELETE, 'at')
 
     async def __add_one_time_job(self, c):
-        log.debug("Add one time job: %s" % c)
+        log.debug("Add one time job: %s" , c)
         self.__create_scheduler(c, True)
         return result()
 
     async def op(self, params):
-        log.debug("Run scheduled job with param: %s" % params)
+        log.debug("Run scheduled job with param: %s", params)
         x = await self.__opc.op_request(params, False)
         if x[CODE] == 200:
-            log.info("Run scheduled job done: %s" % x)
+            log.info("Run scheduled job done: %s", x)
         else:
-            log.warning("Run scheduled job failed: %s" % x)
+            log.warning("Run scheduled job failed: %s", x)
 
     def __create_scheduler(self, j, onetime=False):
         log.debug("create cron item %s", j)
@@ -56,12 +55,12 @@ class Scheduler(ConfigOp):
         else:
             t = asyncio.create_task(schedule(self.op, p, secs = sec, mins = m, hrs = hr, mday = mday, month = mon, wday = wday))
             self.__cron.append(t)
-        
+
     async def __reload_config(self): # NOSONAR
         try:
             self.setup()
             return result()
-        except: #NOSONAR
+        except: #NOSONAR #pylint: disable=bare-except
             return result(500, "Reload config failed")
 
     def setup(self):
@@ -71,8 +70,8 @@ class Scheduler(ConfigOp):
             js = self.load()
             for j in js:
                 self.__create_scheduler(j, False)
-        except Exception as e:
-            log.error("Load cron failed %r" % e)
+        except BaseException as e: #NOSONAR #pylint: disable=bare-except
+            log.error("Load cron failed %r", e)
             self.cleanup_cron()
 
     async def __cleanup_cron(self, _):
@@ -102,20 +101,19 @@ class Scheduler(ConfigOp):
 def error(item, val = None):
     if val is None:
         raise ValueError("Invalide cron item %s." % item)
-    else:
-        raise ValueError("Invalid %s value %s." % (item, val))
+    raise ValueError("Invalid %s value %s." % (item, val))
 
-def parse(str):
-    l = str.split()
+def parse(s):
+    l = s.split()
     if len(l) == 6:
         sec = _parse_col(0, 59, l[0], "second")
-        if sec == None:
+        if sec is None:
             sec = range(0, 60, 1)
         m = _parse_col(0, 59, l[1], "minute")
         if m is None:
             m = range(0, 60, 1)
         hr = _parse_col(0, 23, l[2], "hour")
-        if hr == None:
+        if hr is None:
             hr = range(0, 23, 1)
         mday = _parse_col(1, 31, l[3], "day")
         mon  = _parse_col(1, 12, l[4], "month")
@@ -123,50 +121,50 @@ def parse(str):
         return sec, m, hr, mday, mon, wday
     error(str)
 
-def _to_int(min, max, str, name):
+def _to_int(mins, imax, s, name):
     v = int(str)
-    if v >=min and v <= max:
+    if mins <= v <= imax:
         return v
-    raise ValueError(INVALID_VAL % (name, str))
+    raise ValueError(INVALID_VAL % (name, s))
 
-def _to_int_list(min, max, str, name):
+def _to_int_list(mins, imax, s, name):
     l = []
     ls = None
-    ls = str.split(",")
+    ls = s.split(",")
     if ls is not None and len(ls) > 0:
         for s in ls:
-            v = _to_int(min, max, s, name)
+            v = _to_int(mins, imax, s, name)
             if v is None:
-                raise ValueError(INVALID_VAL % (name, str))
+                raise ValueError(INVALID_VAL % (name, s))
             l.append(v)
         return l
-    raise ValueError(INVALID_VAL % (name, str))
+    raise ValueError(INVALID_VAL % (name, s))
 
-def _to_int_range(min, max, str, name):
-    ls = str.replace('/', '-').split('-')
+def _to_int_range(mins, imax, str1, name):
+    ls = str1.replace('/', '-').split('-')
     if len(ls) == 3:
-        start = _to_int(min, max, ls[0], name)
-        end = _to_int(min, max, ls[1], name)
-        step = _to_int(min, max, ls[2], name)
+        start = _to_int(mins, imax, ls[0], name)
+        end = _to_int(mins, imax, ls[1], name)
+        step = _to_int(mins, imax, ls[2], name)
         if start < end:
             return range(start, end+1, step)
-    raise ValueError(INVALID_VAL % (name, str))
+    raise ValueError(INVALID_VAL % (name, str1))
 
 def _get_range(name):
-    if name == 'second' or name == 'minute':
+    if name in ('second', 'minute'):
         return range(0, 60, 1)
     if name == 'hour':
         return range(0, 24, 1)
     return None
 
-def _parse_col(min, max, str, name):
-    if "*" == str:
+def _parse_col(mins, imax, str1, name):
+    if str1 == "*":
         return _get_range(name)
-    if SINGLE.match(str):
-        return _to_int(min, max, str, name)
-    if ENUM.match(str):
-        return _to_int_list(min, max, str, name)
-    if RANGE.match(str):
-        return _to_int_range(min, max, str, name)
-    raise ValueError(INVALID_VAL % (name, str))
+    if SINGLE.match(str1):
+        return _to_int(mins, imax, str1, name)
+    if ENUM.match(str1):
+        return _to_int_list(mins, imax, str1, name)
+    if RANGE.match(str1):
+        return _to_int_range(mins, imax, str1, name)
+    raise ValueError(INVALID_VAL % (name, str1))
 

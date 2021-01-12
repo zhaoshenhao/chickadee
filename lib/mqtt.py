@@ -1,11 +1,11 @@
-from mqtt_lib import MQTTClient
-from hw import DEVICE_NAME, log
 from config_op import ConfigOp
-from op import GET, SET, result, AUTH_ERR, Operator, TOKEN
+from op import GET, SET, result
 from uasyncio import sleep, create_task
 from utils import singleton, delayed_task
 from ujson import loads, dumps
 from consumer import Consumer
+from umqtt.simple import MQTTClient
+from hw import DEVICE_NAME, log
 
 CMD_TOPIC = "c/" + DEVICE_NAME
 CONFIG_NAME = "/dat/mqtt.json"
@@ -22,6 +22,7 @@ RECONNECT_MSG = "Reconnect mqtt after 5 seconds"
 class Mqtt(ConfigOp, Consumer):
     def __init__(self, opc):
         ConfigOp.__init__(self, 'mqtt', CONFIG_NAME)
+        Consumer.__init__(self)
         self.add_command(self.__get_info, GET)
         self.__client = None
         self.__valid_config = False
@@ -89,8 +90,7 @@ class Mqtt(ConfigOp, Consumer):
     def config_item(self, name, def_val = None):
         if self.__config is None or name not in self.__config:
             return def_val
-        else:
-            return self.__config[name]
+        return self.__config[name]
 
     def get_info(self):
         return {
@@ -108,7 +108,7 @@ class Mqtt(ConfigOp, Consumer):
         }
 
     def disconnect(self):
-        if self.__client != None and self.__client.isconnected():
+        if self.__client is not None and self.__client.isconnected():
             self.__client.disconnect()
 
     def __check_config(self):

@@ -1,10 +1,10 @@
 # For any relay/switch
 from machine import Pin
-from utils import singleton
 from sensor import Producer
 import uasyncio as asyncio
 from micropython import const
 from op import Operator, result, INVALID_ARGS, SET, GET
+from hw import log
 
 ON = const(1)
 OFF = const(2)
@@ -13,11 +13,11 @@ ON_MS = 'on-ms'
 OFF_MS = 'off-ms'
 
 class Relay(Producer, Operator):
-    def __init__(self, pin):
-        Producer.__init__(self, "relay", interval = 60000)
-        Operator.__init__(self, "relay")
+    def __init__(self, pin, n = "relay"):
+        Producer.__init__(self, n, interval = 60000)
+        Operator.__init__(self, n)
         self.__relay = Pin(pin ,Pin.OUT)
-        self.add_sensor("relay", self.get_state)
+        self.add_sensor(n, self.get_state)
         self.__async_blinking = False
         self.add_command(self.__op, SET)
         self.add_command(self.__get, GET)
@@ -43,11 +43,11 @@ class Relay(Producer, Operator):
                 self.stop_async_blink()
             else:
                 return INVALID_ARGS
-        except Exception as e: #NOSONAR
-            print(e)
-            return INVALID_ARGS    
+        except BaseException as e:
+            log.debug("Op error: %r", e)
+            return INVALID_ARGS
         return result(200, None, self.get_state())
-    
+
     async def __get(self, _):
         await asyncio.sleep(0)
         v = self.get_state()

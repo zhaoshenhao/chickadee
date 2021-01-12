@@ -1,14 +1,15 @@
 # Config operations
-import esp, esp32
-import hw
-from op import Operator, result, GET, SET
-from utils import singleton, random_string
-from uasyncio import sleep, create_task
 from os import uname
 from sys import version
+from op import result, GET, SET
+from utils import singleton, random_string
+from uasyncio import sleep, create_task
 from machine import reset, freq
 from config_op import ConfigOp
 from utime import time
+import esp
+import esp32
+import hw
 
 LABEL = "label"
 SECRET = "secret"
@@ -29,7 +30,7 @@ class SysOp(ConfigOp):
 
     @property
     def ntphost(self):
-        if self.__config != None and NTPHOST in self.__config:
+        if self.__config is not None and NTPHOST in self.__config:
             return self.__config[NTPHOST]
         return hw.NTP_HOST
 
@@ -43,13 +44,13 @@ class SysOp(ConfigOp):
 
     def __init_defaults(self, force = False):
         changes = 0
-        if self.__config == None:
+        if self.__config is None:
             self.__config = {}
         if SECRET not in self.__config or force:
             self.__config[SECRET] = random_string(32)
             changes += 1
         if LABEL not in self.__config or force:
-            self.__config[LABEL] = self.device_name
+            self.__config[LABEL] = self.device_lable
             changes += 1
         return changes
 

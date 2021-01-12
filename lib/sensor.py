@@ -1,6 +1,4 @@
 # Represent a sensor
-import time
-import uasyncio as asyncio
 from utils import singleton
 from primitives import queue
 from hw import log, PRINT_SENSOR_DATA
@@ -32,16 +30,17 @@ class SensorProcess:
 
     def setup(self, consumers, producers = [], irq_producers = []):
         # 添加传感器
+        from uasyncio import create_task
         if producers is not None and len(producers) > 0:
             for d in producers:
-                asyncio.create_task(d.produce(self.__sensor_queue))
+                create_task(d.produce(self.__sensor_queue))
         if irq_producers is not None and len(irq_producers) > 0:
             for d in irq_producers:
                 d.setup(self.__sensor_queue)
         # 添加处理器
         self.__consumers = consumers
         # 运行
-        asyncio.create_task(self.__consume(self.__sensor_queue))
+        create_task(self.__consume(self.__sensor_queue))
 
 
 class Producer:
@@ -63,12 +62,13 @@ class Producer:
         产生传感器数据，发送到处理队列
         '''
         log.debug("Start sensor data producer: %s", self.__name)
+        from uasyncio import sleep_ms
         while True:
             try:
                 vals = await self.async_sensor_values()
                 log.debug("Get sensor data")
                 await queue.put(vals)
-                await asyncio.sleep_ms(self.__interval)
+                await sleep_ms(self.__interval)
             except Exception as e:
                 log.warning("Get sensor data failed: %r" % e)
 
@@ -88,9 +88,10 @@ class Producer:
         '''
         同步模式获取值
         '''
+        from time import sleep_ms
         if self.__prepare != None:
             self.__prepare()
-            time.sleep_ms(self.__delay)
+            sleep_ms(self.__delay)
         l = []
         for s in self.__sensors:
             l.append(s.value)
@@ -103,24 +104,19 @@ class Producer:
         '''
         异步模式获取值
         '''
+        from uasyncio import sleep_ms
+        from time import time
         if self.__prepare != None:
             self.__prepare()
-            await asyncio.sleep_ms(self.__delay)
+            await sleep_ms(self.__delay)
         l = []
         for s in self.__sensors:
             l.append(s.value)
         v = {}
         v['d'] = self.__name
         v['s'] = l
+        v['tm'] = time()
         return v
-
-    def remove_sensor(self, name):
-        '''
-        异步模式对@propert 支持有问题，此处不用
-        '''
-        for s in self.__sensors:
-            if s.name == name:
-                self.__sensors.remove(s)
 
 class Sensor:
     '''

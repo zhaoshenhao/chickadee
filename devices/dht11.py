@@ -16,12 +16,12 @@ class Dht11(Producer):
         self._dht.measure()
 
     def get_temperature(self):
-        if self._dht == None:
+        if self._dht is None:
             return None
         return self._dht.temperature()
 
     def get_humidity(self):
-        if self._dht == None:
+        if self._dht is None:
             return None
         return self._dht.humidity()
 

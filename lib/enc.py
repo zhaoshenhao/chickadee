@@ -20,22 +20,16 @@ def unpad(padded_data, block_size = BLOCK_SIZE):
         raise ValueError("Padding is incorrect.")
     return padded_data[:-padding_len]
 
-'''
-Encrypt data
-'''
-def encrypt(cipher, plaintext, bsize = BLOCK_SIZE):
-    if cipher == None or plaintext == None:
+def encrypt(c, plaintext, bsize = BLOCK_SIZE):
+    if c is None or plaintext is None:
         return None
-    return cipher.encrypt(pad(plaintext, bsize))
+    return c.encrypt(pad(plaintext, bsize))
 
-'''
-Decrypt data
-'''
-def decrypt(cipher, data):
-    if cipher == None or data == None:
+def decrypt(c, data):
+    if c is None or data is None:
         return None
-    return unpad(cipher.decrypt(data))
+    return unpad(c.decrypt(data))
 
 def cipher(key, mode = MODE_ECB):
     bs = bytes(key, 'ascii')
-    return aes(bs, MODE_ECB)
+    return aes(bs, mode)

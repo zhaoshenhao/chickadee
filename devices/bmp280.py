@@ -15,17 +15,17 @@ class Bmp280(Producer):
         self.add_sensor("altitude", self.get_altitude)
 
     def get_temperature(self):
-        if self._bmp == None:
+        if self._bmp is None:
             return None
         return self._bmp.getTemp()
 
     def get_pressure(self):
-        if self._bmp == None:
+        if self._bmp is None:
             return None
         return self._bmp.getPress()
 
     def get_altitude(self):
-        if self._bmp == None:
+        if self._bmp is None:
             return None
         return ((pow((101325 / self.get_pressure()), (1.0 / 5.256)) - 1) * (self.get_temperature() + 273.15)) / 0.0065
 

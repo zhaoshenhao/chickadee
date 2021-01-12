@@ -1,10 +1,7 @@
+from os import stat
 from ujson import dumps, loads
 from hw import log
-from os import stat
 
-'''
-Load data from json file
-'''
 def load_json(json):
     log.info("Load json: %s", json)
     try:
@@ -13,17 +10,13 @@ def load_json(json):
             if type(data) == str:
                 if data == "[]":
                     return []
-                else:
-                    return {}
+                return {}
         log.info("Read json, done")
         return data
-    except Exception as e:
+    except BaseException as e: #NOSONAR
         log.error("Read json failed! %s", e)
     return None
 
-'''
-Save data to json file
-'''
 def dump_json(obj, file):
     log.info("Write json to file as string: %s", file)
     try:
@@ -31,16 +24,13 @@ def dump_json(obj, file):
             fp.write(dumps(obj))
         log.info("Write json, done")
         return True
-    except Exception as e:
+    except BaseException as e: #NOSONAR
         log.error("Write json failed! %s", e)
     return False
 
-'''
-Check file existence
-'''
 def file_exists(f):
     try:
         stat(f)
         return True
-    except Exception as e: #NOSONAR
+    except: #NOSONAR #pylint: disable=bare-except
         return False

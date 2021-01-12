@@ -10,7 +10,7 @@ class Photometer(Producer):
         self.add_sensor("light", self.get_light)
 
     def get_light(self): # return 1-100%， more light, highter %
-        if self.__light == None:
+        if self.__light is None:
             return None
         v = (4095 - self.__light.read())/4095 * 100
         return v

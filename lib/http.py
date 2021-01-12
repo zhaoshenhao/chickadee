@@ -1,7 +1,7 @@
-from tinyweb import webserver, HTTPException
+from tinyweb import webserver
+from ujson import dumps #pylint: disable=unused-import
+from op import CODE, VALUE, GET, SET, DELETE, result
 from hw import HTTP_PORT
-from ujson import dumps
-from op import CODE, VALUE, GET, SET, DELETE, result, AUTH_ERR
 
 app = webserver()
 
@@ -30,12 +30,12 @@ async def parse_request(req):
 @app.catchall()
 async def index(request, response):
     try:
-        t, p, m, d, q = await parse_request(request)
+        t, p, m, d, _ = await parse_request(request)
         r = await opc.op(t, p, m, d)
-    except Exception as e1:
+    except BaseException as e1: #NOSONAR
         r = result(500, str(e1))
     code = r[CODE]
-    if 200 <= code and code <= 299:
+    if 200 <= code <= 299:
         v = r[VALUE]
         if v is None:
             s = ""
@@ -48,10 +48,10 @@ async def index(request, response):
     # Start HTTP response with content-type text/html
     response.add_header('Content-Type', 'application/json')
     response.add_header('Content-Length', str(len(s)))
-    await response._send_headers()
+    await response._send_headers() #pylint: disable=protected-access
     await response.send(s)
 
 def http_run(o, loop_forever=False):
-    global opc
+    global opc #pylint: disable=global-statement
     opc = o
     app.run(host='0.0.0.0', port=HTTP_PORT, loop_forever=loop_forever)

@@ -1,20 +1,11 @@
 # Utilities
+from gc import threshold, mem_free, mem_alloc #pylint: disable=no-name-in-module
 import time
-import machine
 import urandom
-import ustruct as struct
 
-'''
-Check if the string is empty (None, empty or with space only)
-'''
-def is_str_empty(str):
-    return str == None or str.isspace() or str == ''
+def is_str_empty(str1):
+    return str1 is None or str.isspace() or str1 == ''
 
-'''
-The singleton decorator. Usage:
-@singleton
-class MyClass
-'''
 def singleton(cls):
     instance = None
     def getinstance(*args, **kwargs):
@@ -24,14 +15,6 @@ def singleton(cls):
         return instance
     return getinstance
 
-'''
-The functor decorator
-Usage:
-@functor
-class MyClass
-...
-    def __call__(self, arg):
-'''
 def functor(cls):
     instance = None
     def getinstance(*args, **kwargs):
@@ -42,9 +25,6 @@ def functor(cls):
         return instance(*args, **kwargs)
     return getinstance
 
-'''
-Generate random string
-'''
 def random_string(length=8):
     #Generate a random string of fixed length
     _randomstring = ''
@@ -57,13 +37,8 @@ def random_string(length=8):
     return _randomstring
 
 def set_gc():
-    from gc import threshold, mem_free, mem_alloc
     threshold(mem_free() // 4 + mem_alloc())
 
-'''
-Run task after x ms
-Note: func should NOT be coro
-'''
 def delayed_task(sec, func, tup_args, is_coro = False):
     from uasyncio import sleep_ms, create_task
     async def __task(sec, func, tup_args):

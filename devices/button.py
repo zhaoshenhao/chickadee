@@ -1,17 +1,17 @@
 # Touch button
 # 按钮一端接地，一端接 ADC Touch，比如32
 
+from time import time, sleep_ms #pylint: disable=no-name-in-module
 from machine import Pin
-from irq_handler import IrqHandler
-import time
+from irq_handler import IrqProducer
 from micropython import const
 
 ON = const(0)
 OFF = not ON
 
-class Button(IrqHandler):
+class Button(IrqProducer):
     def __init__(self, pin):
-        IrqHandler.__init__(self)
+        IrqProducer.__init__(self)
         self._pin = pin
         self._button = Pin(self._pin, Pin.IN, Pin.PULL_UP)
 
@@ -30,7 +30,7 @@ class Button(IrqHandler):
     def _is_status(self, status, duration = 10):
         if self.get_value() == status:
             if duration > 0:
-                time.sleep_ms(duration)
+                sleep_ms(duration)
             else:
                 return True
             return self.get_value() == status
@@ -39,26 +39,12 @@ class Button(IrqHandler):
     def get_value(self):
         return self._button.value()
 
-    def _check_irq(self, b):
-        if self._duration > 0:
-            time.sleep_ms(self._duration)
-            if self._trigger == Pin.IRQ_FALLING or self._trigger == Pin.IRQ_LOW_LEVEL:
-                if self.get_value() == ON:
-                    return True
-            else:
-                if self.get_value() == OFF:
-                    return True
-        else:
-            return True
-        return False
-    
-    # triggere: Pin.IRQ_FALLING, Pin.IRQ_RISING, Pin.IRQ_LOW_LEVEL, Pin.IRQ_HIGH_LEVEL
-    def set_handler(self, fun, duration = 10, trigger = Pin.IRQ_FALLING):
-        self._set_handler(fun, trigger)
-        self._duration = duration
-        self._button.irq(self._callback, self._trigger)
-
-    def remove_handler(self):
-        self._remove_handler()
-        self._button.irq(None, self._trigger)
-
+    def _get_data(self, _):
+        self.__handler_data = {
+            'd': 'pir',
+            'tm': time(),
+            's': [{
+                'n': 'alert',
+                'v': 1
+            }]
+        }

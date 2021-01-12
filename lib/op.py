@@ -1,7 +1,7 @@
-from uasyncio import Lock, sleep_ms
-from ujson import dumps, loads
-from hw import log
+from uasyncio import Lock
 from utils import singleton, is_str_empty
+from utime import time
+from hw import log
 
 CODE = 'c'
 MESSAGE = 'm'
@@ -40,18 +40,11 @@ op_lock = Lock()
 
 @singleton
 class Controller:
-    '''
-    操作处理中心
-    '''
     def __init__(self):
         self.commands = {}
         self.__mqtt = None
 
     async def op(self, token, path, command, param, req_auth = True):
-        '''
-        操作处理
-        req_auth: 内部调用设置为 False
-        '''
         r = None
         if req_auth:
             tm = self.tm_auth(token)
@@ -60,10 +53,10 @@ class Controller:
             if not self.auth(token):
                 r = AUTH_ERR
         if r is None:
-            async with op_lock:
+            async with op_lock: #pylint: disable=not-async-context-manager
                 try:
                     r = await self.int_op(path, command, param)
-                except Exception as e:
+                except BaseException as e: #NOSONAR
                     msg = CALL_ERROR % (path + ':' + command, e)
                     log.error(msg)
                     r = result(500, msg)
@@ -71,20 +64,16 @@ class Controller:
             self.__mqtt.publish_op_log(path, command, r)
         return r
 
-    def auth(self, token):
+    def auth(self, token): #pylint: disable=no-self-use
         if token is None:
             return False
         return True # TODO
 
-    def tm_auth(self, token):
-        '''
-        检查是否是特殊Token，如果是，返回时间戳
-        '''
+    def tm_auth(self, token): #pylint: disable=no-self-use
         try:
             if GET_TM == token.lower():
-                from utime import time
                 return result(200, None, {"tm": time()})
-        except: # NOSONAR
+        except: # NOSONAR #pylint: disable=bare-except
             pass
         return None
 
@@ -98,21 +87,20 @@ class Controller:
         if p in self.commands:
             h = self.commands[p]
             return await h(param)
-        else:
-            return result(404, NOT_FOUND % p)
+        return result(404, NOT_FOUND % p)
 
-    async def op_request(self, request, req_auth = True):
+    async def op_request(self, req, req_auth = True):
         '''
         处理类似Json的请求，只使用List/Dict/基础类型
         '''
-        if COMMAND not in request or PATH not in request or ARGS not in request:
+        if COMMAND not in req or PATH not in req or ARGS not in req:
             return result(400, 'Invalid request, no path/cmd/args property.')
-        cmd = request[COMMAND]
-        path = request[PATH]
-        p = request[ARGS]
+        cmd = req[COMMAND]
+        path = req[PATH]
+        p = req[ARGS]
         t = None
-        if req_auth and TOKEN in request:
-            t = request[TOKEN]
+        if req_auth and TOKEN in req:
+            t = req[TOKEN]
         return await self.op(t, path, cmd, p, req_auth)
 
     def setup(self, operators):
@@ -122,7 +110,7 @@ class Controller:
     def set_mqtt(self, mqtt):
         self.__mqtt = mqtt
 
-class Operator:
+class Operator: #pylint: disable=too-few-public-methods
     '''
     代表提供命令操作的抽象类，每个需要提供命令的设备需要继承该类
     '''

@@ -1,14 +1,11 @@
-import ubinascii
 import os
+import ubinascii
 
-'''
-UUID class. Don't call this. Use uuid() method instead.
-'''
 class UUID:
-    def __init__(self, bytes):
-        if len(bytes) != 16:
+    def __init__(self, bs):
+        if len(bs) != 16:
             raise ValueError('bytes arg must be 16 bytes long')
-        self._bytes = bytes
+        self._bytes = bs
 
     @property
     def hex(self):
@@ -21,12 +18,9 @@ class UUID:
     def __repr__(self):
         return "<UUID: %s>" % str(self)
 
-'''
-Generate UUID
-'''
 def uuid():
     """Generates a random UUID compliant to RFC 4122 pg.14"""
     random = bytearray(os.urandom(16))
     random[6] = (random[6] & 0x0F) | 0x40
     random[8] = (random[8] & 0x3F) | 0x80
-    return UUID(bytes=random)
+    return UUID(bs=random)

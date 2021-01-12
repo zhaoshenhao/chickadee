@@ -1,16 +1,15 @@
 # Wifi connection class
-import hw
-from ustruct import unpack
-from time import time, sleep_ms
+from time import time
 from network import WLAN, STA_IF
 from utils import singleton, is_str_empty, delayed_task
 from relay import Relay
 from uping import ping_check
 from config_op import ConfigOp
 from micropython import const
-from hw import log, MAC
-from uasyncio import sleep
+from uasyncio import sleep, sleep_ms
 from op import GET, SET, result
+from hw import log, MAC
+import hw
 
 SSID = "ssid"
 TIMEOUT = "timeout"
@@ -65,23 +64,19 @@ class Wifi(ConfigOp):
 
     def check_wifi_config(self):
         self.load()
-        return not (self.__config == None or is_str_empty(self.__config[SSID]) or is_str_empty(self.__config[PASSWORD]))
+        return not (self.__config is None or is_str_empty(self.__config[SSID]) or is_str_empty(self.__config[PASSWORD]))
 
     def disconnect(self):
-        if self.__wlan != None and self.__wlan.isconnected():
+        if self.__wlan is not None and self.__wlan.isconnected():
             self.__wlan.disconnect()
             self.__wlan.active(False)
 
-    '''
-    异步连接系列函数
-    '''
     async def async_connect(self, force_rec = False):
-        if self.__wlan != None and self.__wlan.isconnected():
-            if not force_rec:
-                return True
-            else:
+        if self.__wlan is not None and self.__wlan.isconnected():
+            if force_rec:
                 self.disconnect()
                 return await self.__async_connect()
+            return True
         return await self.__async_connect()
 
     async def __async_connect(self):
@@ -89,12 +84,11 @@ class Wifi(ConfigOp):
         return await self.__async_connect_finish()
 
     async def __async_connect_finish(self):
-        from uasyncio import sleep_ms as asleep_ms
         start_time = time() # Check time
         while not self.__wlan.isconnected():
-            await asleep_ms(DEFAULT_300)
+            await sleep_ms(DEFAULT_300)
             self.__led.on()
-            await asleep_ms(DEFAULT_300)
+            await sleep_ms(DEFAULT_300)
             self.__led.off()
             if time()-start_time > self.__timeout:
                 log.error("Wifi connection timeout: %d", self.__timeout)
@@ -103,9 +97,9 @@ class Wifi(ConfigOp):
 
     def __connect_init(self):
         self.check_wifi_config()
-        if self.__config == None:
+        if self.__config is None:
             log.error("Wifi config is None")
-            return False
+            return
         log.info("Connect to wifi: %s", self.__config[SSID])
         self.__wlan = WLAN(STA_IF)  # 创建 station 接口
         if self.__wlan.isconnected():
@@ -130,7 +124,7 @@ class Wifi(ConfigOp):
             self.dns = None
             self.is_ok = False
             self.__wlan = None
-            self.__len.off()
+            self.__led.off()
         return self.is_ok
 
     def check_connection(self):
@@ -149,13 +143,12 @@ class Wifi(ConfigOp):
         return ping_check(dest)
 
     async def monitor(self):
-        from uasyncio import sleep as asleep
         log.debug("Setup wifi monitor")
         while hw.WIFI:
             try:
-                await asleep(hw.WIFI_CHECK_INTVAL)
+                await sleep(hw.WIFI_CHECK_INTVAL)
                 if not self.check_connection():
                     log.info("Wifi is not ready, reconnecting...")
                     await self.async_connect(True)
-            except: #NOSONAR
+            except: #NOSONAR # pylint: disable=W0702
                 pass

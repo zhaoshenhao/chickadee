@@ -21,6 +21,7 @@
 > * Prettify JSON
 > * SonarLint
 > * Visual Studio IntelliCode
+> * Pylance
 
 5. Micropython
 

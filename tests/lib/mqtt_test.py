@@ -1,7 +1,7 @@
-from mqtt_lib import MQTTClient
 import hw
 import time
-from wifi_sync import WifiSync
+from wifi import Wifi
+
 
 SENSOR_TOPIC = "chickadee/sensors"
 CMD_TOPIC = "c/" + hw.DEVICE_NAME

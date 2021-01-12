@@ -3,9 +3,6 @@ from op import Operator, result, GET, SET
 from file import load_json, dump_json
 from uasyncio import sleep
 
-'''
-系统文件的抽象类。提供基本的读取、写入、初始化、检查等基本功能
-'''
 class ConfigOp(Operator):
     def __init__(self, name, fn):
         self.__fn = fn

@@ -15,22 +15,22 @@ class Sht30(Producer):
         self.add_sensor("humidity", self.get_humidity)
 
     def get_temperature(self):
-        t, h = self.read_temp_humd()
+        t, _ = self.read_temp_humd()
         return t
 
     def get_humidity(self):
-        t, h = self.read_temp_humd()
+        _, h = self.read_temp_humd()
         return h
 
     def read_temp_humd(self):
         #status = self.i2c.writeto(self.addr,b'\x2c\x06') #NOSONAR
-        status = self.i2c.writeto(self.addr,b'\x24\x00')
+        _ = self.i2c.writeto(self.addr,b'\x24\x00')
         # delay (20 slow)
         utime.sleep_ms(100)
         # read 6 bytes
         databytes = self.i2c.readfrom(self.addr, 6)
-        dataset = [databytes[0],databytes[1]]
-        dataset = [databytes[3],databytes[4]]
+        _ = [databytes[0],databytes[1]]
+        _ = [databytes[3],databytes[4]]
         temperature_raw = databytes[0] << 8 | databytes[1]
         temperature = (175.0 * float(temperature_raw) / 65535.0) - 45
         # fahreheit #NOSONAR

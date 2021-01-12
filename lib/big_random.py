@@ -1,8 +1,5 @@
 import os
 
-'''
-Count bytes of a big int
-'''
 def count_bytes(i):
     l = 128
     bs = i.to_bytes(l, 'big')
@@ -14,9 +11,6 @@ def count_bytes(i):
             return l - cnt
     return 0
 
-'''
-Generate a random big int with bound
-'''
 def random_bigint(bound):
     bl = count_bytes(bound) - 1
     bs = os.urandom(bl)

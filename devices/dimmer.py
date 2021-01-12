@@ -1,7 +1,6 @@
 from machine import Pin, PWM
 from relay import Relay
-from sensor import Producer
-import uasyncio as asyncio
+from uasyncio import sleep_ms
 from micropython import const
 
 ON = const(1023)
@@ -13,7 +12,8 @@ class Dimmer(Relay):
         self.__freq = freq
         self.__dimmer = PWM(Pin(self.__pin), freq=self.__freq)
         self.__duty = self.__dimmer.duty()
-        Producer.__init__(self, 'dimmer')
+        self.__async_fading = False
+        Relay.__init__(pin, 'dimmer')
         self.add_sensor("dimmer", self.get_power)
 
     def get_power(self):
@@ -58,11 +58,11 @@ class Dimmer(Relay):
     async def async_pulse(self, fade_tm = 10, interval = 1000):
         for i in range(100):
             self.set_duty(int(i * 11))
-            await asyncio.sleep_ms(fade_tm)
+            await sleep_ms(fade_tm)
         for i in reversed((range(100))):
             self.set_duty(int(i * 11))
-            await asyncio.sleep_ms(fade_tm)
-        await asyncio.sleep_ms(interval)
+            await sleep_ms(fade_tm)
+        await sleep_ms(interval)
 
     # This function contains bug. Only works after reboot
     async def async_fading(self, fade_tm = 10, interval = 1000):

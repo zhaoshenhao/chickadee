@@ -4,7 +4,7 @@ from sensor import Producer
 from onewire import OneWire
 from ds18x20 import DS18X20
 
-class Ds18b20(Device):
+class Ds18b20(Producer):
     def __init__(self, pin):
         Producer.__init__(self, 'ds18b20', 60000)
         ow = OneWire(Pin(pin))
