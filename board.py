@@ -177,8 +177,8 @@ class Board:
             mqtt = Mqtt(dev.opc)
             dev.OPERATORS.append(mqtt)
             dev.CONSUMERS.append(mqtt)
-            mqtt.connect()
             dev.opc.set_mqtt(mqtt)
+            mqtt.setup()
 
     async def __setup_ble(self):
         if hw.BLE_UART:

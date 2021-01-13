@@ -4,7 +4,7 @@ import time
 import urandom
 
 def is_str_empty(str1):
-    return str1 is None or str.isspace() or str1 == ''
+    return str1 is None or str1.isspace() or str1 == ''
 
 def singleton(cls):
     instance = None
@@ -43,12 +43,12 @@ def delayed_task(sec, func, tup_args, is_coro = False):
     from uasyncio import sleep_ms, create_task
     async def __task(sec, func, tup_args):
         await sleep_ms(sec)
-        func(*tup_args)
+        func(tup_args)
 
     async def __coro_task(sec, func, tup_args):
         await sleep_ms(sec)
-        await func(*tup_args)
-    
+        await func(tup_args)
+
     if is_coro:
         create_task(__coro_task(sec, func, tup_args))
     else:

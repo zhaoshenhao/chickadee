@@ -5,19 +5,16 @@ from hw import log, PRINT_SENSOR_DATA
 
 @singleton
 class SensorProcess:
-    '''
-    传感器数据统一处理流程
-    '''
     def __init__(self):
         self.__sensor_queue = queue.Queue(10)
         self.__consumers = []
 
-    async def __consume(self, queue):
+    async def __consume(self, q):
         while True:
             try:
-                result = await queue.get()
+                result = await q.get()
                 await self.__process_sensor_queue(result)
-            except: #NOSONAR
+            except: #pylint: disable=bare-except
                 pass
 
     async def __process_sensor_queue(self, result):
@@ -28,7 +25,7 @@ class SensorProcess:
         for c in self.__consumers:
             await c.consume(result)
 
-    def setup(self, consumers, producers = [], irq_producers = []):
+    def setup(self, consumers, producers = None, irq_producers = None):
         # 添加传感器
         from uasyncio import create_task
         if producers is not None and len(producers) > 0:
@@ -57,7 +54,7 @@ class Producer:
         self.__interval = interval
         self.__name = name
 
-    async def produce(self, queue):
+    async def produce(self, q):
         '''
         产生传感器数据，发送到处理队列
         '''
@@ -67,10 +64,10 @@ class Producer:
             try:
                 vals = await self.async_sensor_values()
                 log.debug("Get sensor data")
-                await queue.put(vals)
+                await q.put(vals)
                 await sleep_ms(self.__interval)
-            except Exception as e:
-                log.warning("Get sensor data failed: %r" % e)
+            except BaseException as e:
+                log.warning("Get sensor data failed: %r", e)
 
     def add_sensor(self, name, handler):
         s = Sensor(name, handler)
@@ -88,7 +85,7 @@ class Producer:
         '''
         同步模式获取值
         '''
-        from time import sleep_ms
+        from utime import sleep_ms
         if self.__prepare != None:
             self.__prepare()
             sleep_ms(self.__delay)

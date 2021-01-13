@@ -67,7 +67,7 @@ class Controller:
     def auth(self, token): #pylint: disable=no-self-use
         if token is None:
             return False
-        return True # TODO
+        return True
 
     def tm_auth(self, token): #pylint: disable=no-self-use
         try:
@@ -122,7 +122,7 @@ class Operator: #pylint: disable=too-few-public-methods
         '''
         Only allow get, set and delete
         '''
-        if (op != GET and op != SET and op != DELETE):
+        if op not in (GET, SET, DELETE):
             raise ValueError("Invalid op: %s" % op)
         if not is_str_empty(path):
             p = self.__name + "/" + path + ":" + op

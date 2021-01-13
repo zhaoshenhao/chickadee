@@ -114,7 +114,7 @@ class Wifi(ConfigOp):
 
     def __set_properties(self):
         if self.__wlan.isconnected():
-            log.info('network information: %s', str(self.__wlan.ifconfig()))
+            log.info('network information: %r', self.__wlan.ifconfig())
             (self.ip, _, self.gw, self.dns) = self.__wlan.ifconfig()
             self.is_ok = True
             self.__led.on()

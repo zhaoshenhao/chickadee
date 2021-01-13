@@ -1,13 +1,12 @@
-from mqtt import Mqtt
 import logging
+from mqtt import Mqtt
 from wifi import Wifi
-from hw import log
 from sys_op import SysOp
 from op import Controller
 import uasyncio as asyncio
 from sensor import SensorProcess
-import dev
 from consumer import DefaultConsumer
+import dev
 
 logging._level = logging.DEBUG
 opc = Controller()
@@ -27,15 +26,15 @@ opc.set_mqtt(mqtt)
 consumers = []
 consumers.append(def_consumer)
 consumers.append(mqtt)
-sp.setup(consumers, dev.SENSORS)
 
 print(opc.commands.keys())
 
 async def test():
     await wifi.async_connect()
     print(mqtt.get_info())
-    mqtt.connect()
+    mqtt.setup()
     print(mqtt.get_info())
+    sp.setup(consumers, dev.SENSORS)
     cnt = 0
     while True:
         cnt = cnt + 1

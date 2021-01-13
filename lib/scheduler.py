@@ -119,10 +119,10 @@ def parse(s):
         mon  = _parse_col(1, 12, l[4], "month")
         wday = _parse_col(0, 6, l[5], "week day")
         return sec, m, hr, mday, mon, wday
-    error(str)
+    error(s)
 
 def _to_int(mins, imax, s, name):
-    v = int(str)
+    v = int(s)
     if mins <= v <= imax:
         return v
     raise ValueError(INVALID_VAL % (name, s))
