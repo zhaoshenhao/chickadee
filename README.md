@@ -137,7 +137,7 @@ class SysOp(ConfigOp):
 /sys/commands, GET
 /sys/echo, POST/PUT
 /sys/reboot, POST/PUT
-/sys/config, GET - 通过 ConfigOp 引入
+/sys/config, GET/POST/PUT - 通过 ConfigOp 引入
 ```
 
 当内部调用 `Controller.op` 时，path 和 command 参数即对应上述内容
@@ -375,42 +375,42 @@ $ curl -X GET -H 'token: testdata' -H 'Content-Type: application/json' 'http://1
 
 ### MQTT
 
-mqtt/reconnect:set - MQTT 重新连接
-mqtt/config:get - MQTT 配置读取
-mqtt/config:set - MQTT 配置修改
-mqtt:get - MQTT 状态读取
+* mqtt/reconnect:set - MQTT 重新连接
+* mqtt/config:get - MQTT 配置读取
+* mqtt/config:set - MQTT 配置修改
+* mqtt:get - MQTT 状态读取
 
 ### WIFI
 
-wifi:get - 获取 WIFI 连接信息
-wifi/reconnect:set - WIFI 重新连接
-wifi/config:set - 获取 WIFI 配置
-wifi/config:get - 获取 WIFI 的配置
+* wifi:get - 获取 WIFI 连接信息
+* wifi/reconnect:set - WIFI 重新连接
+* wifi/config:set - 获取 WIFI 配置
+* wifi/config:get - 获取 WIFI 的配置
 
 ### 系统
 
-sys/commands:get  - 获取系统命令列表
-sys/config:get - 获取自定义设备名和密钥
-sys/info:get - 获取系统各种配置信息
-sys/echo:set - 测试命令
-sys/reboot:set - 重启设备
+* sys/commands:get  - 获取系统命令列表
+* sys/config:get - 获取自定义设备名和密钥
+* sys/info:get - 获取系统各种配置信息
+* sys/echo:set - 测试命令
+* sys/reboot:set - 重启设备
 
 ### 定时任务
 
-cron/at:delete - 删除全部一次性定时任务
-cron/config:set - 设置定时任务
-cron/config:get - 获取定时任务
-cron/at:set - 添加一个一次性任务
-cron:delete - 删除全部定时任务
+* cron/at:delete - 删除全部一次性定时任务
+* cron/config:set - 设置定时任务
+* cron/config:get - 获取定时任务
+* cron/at:set - 添加一个一次性任务
+* cron:delete - 删除全部定时任务
 
 ### 传感器
 
-sensors:get - 获取最新的全部传感器数据
+* sensors:get - 获取最新的全部传感器数据
 
 ### 开关
 
-relay:get - 获取 relay（开关）的状态
-relay:set - 设置 relay（开关）的状态
+* relay:get - 获取 relay（开关）的状态
+* relay:set - 设置 relay（开关）的状态
 
 ## 附录 2 常用数据结构
 
@@ -504,7 +504,7 @@ def result(c = 0, m = '', v = None):
 
 Token用于认证和确认加密方式，其格式有两种
 
-* 获取时间戳 - `get_tm`，该 `Token` 指示本次请求时获取设备的当前时间戳，系统自动忽略请求中的内容
+* 获取时间戳 - `get_tm`，该 `Token` 指示本次请求仅用于获取设备的当前时间戳，系统自动忽略请求中的内容
 * 正常模式 - `salt:hash:timestamp` 指示本次请求使用设备密钥进行加密，并且需要校验时间戳
 * 特殊配置模式 - `salt:hash` 指示本次请求使用设备 `PIN`，如果系统在特殊配置模式下，使用 `PIN` 进行解密，不验证时间戳。如果系统在正常模式下，返回系统模式错误
 
@@ -518,19 +518,19 @@ Token用于认证和确认加密方式，其格式有两种
 
 ##### 获取时间戳
 
-直接填入 `get-tm` 字符串。*注意*，嵌入系统的 `Epoch` 时间戳从`2000年1月1日`计数，和`正常/Unix`相差`946684800`秒
+直接填入 `get-tm` 字符串。
 
 ##### 正常模式
 
 tm = epoch 转数字字符串
-hash = HEX(SHA256(key + salt + tm))
+hash = Base64(SHA256(key + salt + tm))
 token = salt + ":" + hash + ":" + tm
 
 验证方式: 根据 `tm`，`salt`，`key` 重新计算 `hash` 并比较
 
 ##### 特殊配置模式
 
-hash = HEX(SHA256(key + salt))
+hash = Base64(SHA256(key + salt))
 token = salt + ":" + hash
 
 验证方式: 根据 `salt`，`pin` 重新计算 `hash` 并比较
@@ -567,7 +567,7 @@ token = salt + ":" + hash
 
 ### Q8 系统返回的时间戳是30年前的
 
-嵌入系统的时间戳用`2000年1月1号`开始算起。使用前需要折算。
+嵌入系统的时间戳用`2000年1月1号`开始算起，和正常/Unix相差946684800秒，使用根据需要折算。框架已经在Token等对外通讯上，对时间戳进行了处理。
 
 ## 附录 4 各类通讯的长度限制
 
