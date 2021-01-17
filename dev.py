@@ -34,12 +34,12 @@ OPERATORS.append(default_consumer)
 
 #以下代码引入需要配置的设备
 # 可操控设备
-OPERATORS.append(Relay(2))
+OPERATORS.append(Relay(2, 'relay-1'))
 
 # 传感器设备
-SENSORS.append(Dht11(27))
+SENSORS.append(Dht11(27, 'dht11-1'))
 
 # IRQ 传感器设备
-IRQ_SENSORS.append(Pir(22))
+IRQ_SENSORS.append(Pir(22, 'pir-1'))
 
 state = 0

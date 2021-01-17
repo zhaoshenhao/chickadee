@@ -1,5 +1,5 @@
 # Represent a sensor
-from utils import singleton
+from utils import singleton, time_stamp
 from primitives import queue
 from hw import log, PRINT_SENSOR_DATA
 
@@ -102,7 +102,6 @@ class Producer:
         异步模式获取值
         '''
         from uasyncio import sleep_ms
-        from time import time
         if self.__prepare != None:
             self.__prepare()
             await sleep_ms(self.__delay)
@@ -112,7 +111,7 @@ class Producer:
         v = {}
         v['d'] = self.__name
         v['s'] = l
-        v['tm'] = time()
+        v['tm'] = time_stamp()
         return v
 
 class Sensor:

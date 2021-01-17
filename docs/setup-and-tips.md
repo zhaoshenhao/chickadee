@@ -26,7 +26,8 @@
 5. Micropython
 
 * https://micropython.org/
-* Firmware: https://micropython.org/download/esp32/ 
+* Firmware: https://micropython.org/download/esp32/
+* 目前使用得 Firmware: https://micropython.org/resources/firmware/esp32-idf3-20200902-v1.13.bin 
 
 6. Micropython lib
 

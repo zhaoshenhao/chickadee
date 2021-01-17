@@ -1,7 +1,7 @@
 # Utilities
 from gc import threshold, mem_free, mem_alloc #pylint: disable=no-name-in-module
-import time
-import urandom
+from time import time, localtime
+from urandom import seed, choice
 
 def is_str_empty(str1):
     return str1 is None or str1.isspace() or str1 == ''
@@ -30,9 +30,9 @@ def random_string(length=8):
     _randomstring = ''
     x = 0
     #add random seed seconds of localtime
-    urandom.seed(time.localtime()[5])
+    seed(localtime()[5])
     while x < length:
-        _randomstring = _randomstring + urandom.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890')
+        _randomstring = _randomstring + choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890')
         x += 1
     return _randomstring
 
@@ -53,3 +53,6 @@ def delayed_task(sec, func, tup_args, is_coro = False):
         create_task(__coro_task(sec, func, tup_args))
     else:
         create_task(__task(sec, func, tup_args))
+
+def time_stamp():
+    return 946684800 + time()

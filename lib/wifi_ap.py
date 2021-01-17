@@ -11,15 +11,18 @@ class WifiAp:
     def start_ap(self):
         if self.ap.active():
             return
-        else:
-            self.ap.active(True)
-            self.ap.config(essid = DEVICE_NAME, password = HW_PIN)
-            while self.ap.active():
-                sleep(1)
+        self.ap.active(True)
+        self.ap.config(essid = DEVICE_NAME, password = HW_PIN)
+        while not self.ap.active():
+            sleep(1)
+
+    def stop_ap(self):
+        if self.ap.active():
+            self.ap.active(False)
 
     def get_info(self):
         if self.ap.active():
-            (ip, _, gw, _) = self.ap.config()
+            (ip, _, gw, _) = self.ap.ifconfig()
             return {
                 'ip': ip,
                 'gw': gw

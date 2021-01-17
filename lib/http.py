@@ -36,13 +36,14 @@ async def index(request, response):
         r = result(500, str(e1))
     code = r[CODE]
     if 200 <= code <= 299:
-        v = r[VALUE]
+        v = None if VALUE not in r else r[VALUE]
         if v is None:
             s = ""
         else:
             s = dumps(v)
     else:
-        r.pop(VALUE)
+        if VALUE in r:
+            r.pop(VALUE)
         s = dumps(r)
     response.code = r[CODE]
     # Start HTTP response with content-type text/html

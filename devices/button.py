@@ -3,15 +3,15 @@
 
 from time import time, sleep_ms #pylint: disable=no-name-in-module
 from machine import Pin
-from irq_handler import IrqProducer
+from irq_producer import IrqProducer
 from micropython import const
 
 ON = const(0)
 OFF = not ON
 
 class Button(IrqProducer):
-    def __init__(self, pin):
-        IrqProducer.__init__(self)
+    def __init__(self, pin, name = 'button'):
+        IrqProducer.__init__(self, name)
         self._pin = pin
         self._button = Pin(self._pin, Pin.IN, Pin.PULL_UP)
 

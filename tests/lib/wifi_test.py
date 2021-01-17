@@ -1,14 +1,7 @@
-from wifi import Wifi
-import time
-import uasyncio as asyncio
 import logging
+from wifi import Wifi
+import uasyncio as asyncio
 import hw
-
-def demo():
-    wifi = Wifi()
-    print(wifi.connect())
-    time.sleep(1)
-    wifi.info()
 
 async def demo_async():
     wifi = Wifi('ybb-home')
@@ -27,7 +20,6 @@ async def demo_async():
 if __name__ == "__main__":
 #    demo()
     try:
-        import logging
         logging._level = logging.DEBUG
         hw.WIFI_CHECK_INTVAL = 3
         asyncio.run(demo_async())

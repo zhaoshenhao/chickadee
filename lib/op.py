@@ -10,7 +10,7 @@ COMMAND = 'c'
 PATH = 'p'
 ARGS = 'a'
 TOKEN = 't'
-OP_INFO = "Op %s"
+OP_INFO = "Op %s, param: %r"
 NOT_FOUND = "Op %s not found"
 CALL_ERROR =  "Op %s failed: %s"
 JSON_ERROR = "Invalid json string: %s.\n%s"
@@ -83,7 +83,7 @@ class Controller:
         无需认证
         '''
         p = path + ":" + command
-        log.debug(OP_INFO, p)
+        log.debug(OP_INFO, p, param)
         if p in self.commands:
             h = self.commands[p]
             return await h(param)

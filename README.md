@@ -25,7 +25,7 @@
 ### 1.1 核心组件
 
 * 主控 board.py
-* 传感器及器信息处理框架 lib/sensor.py，lib/consumer.py，lib/irq_handler.py
+* 传感器及器信息处理框架 lib/sensor.py，lib/consumer.py，lib/irq_procuder.py
 * 设备操作处理框架 lib/op.py
 
 ### 1.2 其他组件
@@ -60,10 +60,10 @@
 
 #### 1.4.2 主要文件和类
 
-* sensor.py, consumer.py, irq_handler.py
+* sensor.py, consumer.py, irq_producer.py
 * Sensor - 传感器数据和操作封装
 * Producer - 传感器数据生产者，相关的传感器类必须继承该类。该类内部定时轮询读取数据
-* IrqHandler - 中断型传感器数据产生者，该类传感器由系统中断激活，比如人体红外侦测传感器
+* IrqProducer - 中断型传感器数据产生者，该类传感器由系统中断激活，比如人体红外侦测传感器
 * Consumer - 传感器数据消费者，所有的消费者必须继承该类
 * DefaultConsumer - 默认消费者，用于暂存最近的传感器数据，并对外提供读取操作
 * SensorProcess - 框架主控，负责以下功能
@@ -236,14 +236,13 @@ from sensor import Producer
 import dht
 
 class Dht11(Producer):
-    def __init__(self, pin):
+    def __init__(self, pin, name = 'dht11'):
         self._pin = pin
-        Producer.__init__(self, 'dht11', 60000)
+        Producer.__init__(self, name, 60000, 1000)
         self._dht = dht.DHT11(Pin(self._pin))
         self.add_sensor("temperature", self.get_temperature)
         self.add_sensor("humidity", self.get_humidity)
         self.set_prepare_handler(self.measure)
-
 ```
 
 ### 4.2 中断类型传感器
@@ -253,17 +252,19 @@ class Dht11(Producer):
 请参考 pir.py 人体移动感应
 
 ```python
-from irq_handler import IrqHandler
+from utils import time_stamp
+from irq_producer import IrqProducer
 from machine import Pin
 
-class Pir(IrqHandler):
-    def __init__(self, pin):
-        IrqHandler.__init__(self)
+class Pir(IrqProducer):
+    def __init__(self, pin, name = 'pir'):
+        IrqProducer.__init__(self, name)
         self.__irq = Pin(pin, Pin.IN, Pin.PULL_UP) #NOSONAR
 
     def _get_data(self, b):
         self.__handler_data = { #NOSONAR
-            'd': 'pir',
+            'd': self.name,
+            'tm': time_stamp(),
             's': [{
                 'n': 'alert',
                 'v': 1

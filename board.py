@@ -54,6 +54,7 @@ class Board:
 
     def __setup_led(self):
         self.__led.stop_async_blink()
+        hw.log.debug("State: %d, set led." % dev.state)
         if dev.state == SYS_STATE_REBOOT:
             create_task(self.__led.async_blink(300, 300))
         elif dev.state == SYS_STATE_CONFIG:

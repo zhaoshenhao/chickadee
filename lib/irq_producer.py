@@ -5,12 +5,13 @@ from uasyncio import create_task
 from hw import log
 
 class IrqProducer:
-    def __init__(self, trigger = Pin.IRQ_RISING):
+    def __init__(self, name, trigger = Pin.IRQ_RISING):
         self.handler = None
         self.__handler_data = None
         self.queue = None
         self.trigger = trigger
         self.__irq = None
+        self.name = name
 
     def _get_data(self, b): #NOSONAR
         pass

@@ -1,7 +1,7 @@
 from config_op import ConfigOp
 from op import GET, SET, result
 from uasyncio import sleep, create_task
-from utils import singleton, delayed_task
+from utils import singleton, delayed_task, time_stamp
 from primitives import queue
 from ujson import loads, dumps
 from consumer import Consumer
@@ -139,7 +139,7 @@ class Mqtt(ConfigOp, Consumer):
         self.__client = None
 
     def publish_op_log(self, p, c, ret):
-        x = {'p': p, 'c': c, 'r': ret}
+        x = {'p': p, 'c': c, 'r': ret, 'tm': time_stamp()}
         return self.publish(x, topic = OP_LOG_TOPIC)
 
     def __sub_callback(self, topic, pay): 

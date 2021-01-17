@@ -26,7 +26,8 @@ class DefaultConsumer(Operator, Consumer):
     async def consume(self, data):
         d = data['d']
         s = data['s']
-        self.__sensors[d] = s
+        tm = data['tm']
+        self.__sensors[d] = {'s': s, 'tm': tm}
         sleep(0)
 
     async def __get(self, _):
