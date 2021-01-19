@@ -1,7 +1,9 @@
+import logging
+from struct import unpack
 from micropython import const
-'''
-硬件配置文件 - 只读
-'''
+from machine import unique_id
+
+#硬件配置文件 - 只读
 # 设备类型
 TYPE = "ybb-switch"
 
@@ -44,11 +46,8 @@ PRINT_SENSOR_DATA = True
 # 垃圾收间隔
 GC_INTERVAL = const(60)
 
-import logging
 log = logging.getLogger("ybb")
 
-from machine import unique_id
-from struct import unpack
 x = unique_id()
 MAC = "%x:%x:%x:%x:%x:%x" % unpack("BBBBBB",x)
 UNIQUE_ID =  "%x%x%x%x%x%x" % unpack("BBBBBB",x)

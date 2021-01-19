@@ -1,3 +1,6 @@
+import sys
+sys.path.append('lib')
+
 from sec import Sec
 from op import request, result
 import dev
@@ -32,5 +35,5 @@ print("Verify %s" % str(st.check_token(t)))
 
 print("Test token 2")
 t = st.create_token()
-print("Special token: %s" % t)
+print("Normal token: %s" % t)
 print("Verify %s" % str(st.check_token(t)))

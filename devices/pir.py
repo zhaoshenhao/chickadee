@@ -8,6 +8,8 @@ class Pir(IrqProducer):
     def __init__(self, pin, name = 'pir'):
         IrqProducer.__init__(self, name)
         self.__irq = Pin(pin, Pin.IN, Pin.PULL_UP) #NOSONAR
+        self.interval = 10
+        self.cool_down_gap = 1000
 
     def _get_data(self, b):
         self.__handler_data = { #NOSONAR

@@ -41,7 +41,7 @@ class Button(IrqProducer):
 
     def _get_data(self, _):
         self.__handler_data = {
-            'd': 'pir',
+            'd': self.name,
             'tm': time(),
             's': [{
                 'n': 'alert',

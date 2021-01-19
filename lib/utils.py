@@ -1,5 +1,4 @@
 # Utilities
-from gc import threshold, mem_free, mem_alloc #pylint: disable=no-name-in-module
 from time import time, localtime
 from urandom import seed, choice
 
@@ -35,9 +34,6 @@ def random_string(length=8):
         _randomstring = _randomstring + choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890')
         x += 1
     return _randomstring
-
-def set_gc():
-    threshold(mem_free() // 4 + mem_alloc())
 
 def delayed_task(sec, func, tup_args, is_coro = False):
     from uasyncio import sleep_ms, create_task

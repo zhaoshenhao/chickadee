@@ -1,10 +1,10 @@
 # The device class contains all necessary generic device operation
-from gc import collect
+from gc import threshold, mem_free, mem_alloc, collect #pylint: disable=no-name-in-module
 from time import time
 from machine import Pin,freq, reset
 from uasyncio import create_task, sleep, get_event_loop
 from primitives.pushbutton import Pushbutton
-from utils import singleton, set_gc
+from utils import singleton
 from micropython import const, mem_info
 from relay import Relay
 import hw
@@ -16,6 +16,9 @@ SYS_STATE_REBOOT = const(1)
 SYS_STATE_CONFIG = const(2)
 SYS_STATE_RESET = const(3)
 SYS_STATE_TIMEOUT = const(30) # 系统状态超时，系统进入某种状态，比如重启，没有下一步操作，超时后返回常规状态
+
+def set_gc():
+    threshold(mem_free() // 4 + mem_alloc())
 
 @singleton
 class Board:
@@ -54,7 +57,7 @@ class Board:
 
     def __setup_led(self):
         self.__led.stop_async_blink()
-        hw.log.debug("State: %d, set led." % dev.state)
+        hw.log.debug("State: %d, set led.", dev.state)
         if dev.state == SYS_STATE_REBOOT:
             create_task(self.__led.async_blink(300, 300))
         elif dev.state == SYS_STATE_CONFIG:
@@ -94,7 +97,11 @@ class Board:
             hw.log.info("Ap network: %r", ap.get_info())
         elif dev.state == SYS_STATE_RESET:
             hw.log.info("Reset from button")
-            dev.config.init_config() # TODO
+            # initialize config
+            dev.config.init_config()
+            # Empyt cron
+            # Empty mqtt
+            # Empty wifi
             reset()
 
     async def __setup_button(self):
