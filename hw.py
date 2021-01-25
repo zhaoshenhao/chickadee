@@ -46,6 +46,15 @@ PRINT_SENSOR_DATA = True
 # 垃圾收间隔
 GC_INTERVAL = const(60)
 
+# 启用加密输出
+ENCRYPTED_OUTPUT = True
+
+# 启用加密输入
+ENCRYPTED_INPUT = True
+
+# 启用 Token 认证
+AUTH_TOKEN = False
+
 log = logging.getLogger("ybb")
 
 x = unique_id()

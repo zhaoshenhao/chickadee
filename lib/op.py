@@ -43,6 +43,7 @@ class Controller:
     def __init__(self):
         self.commands = {}
         self.__mqtt = None
+        self.sec = None
 
     async def op(self, token, path, command, param, req_auth = True):
         r = None
@@ -93,7 +94,9 @@ class Controller:
         '''
         处理类似Json的请求，只使用List/Dict/基础类型
         '''
+        log.debug("Req: %r", req)
         if COMMAND not in req or PATH not in req or ARGS not in req:
+            log.debug("Invalid request, no path/cmd/args property.")
             return result(400, 'Invalid request, no path/cmd/args property.')
         cmd = req[COMMAND]
         path = req[PATH]
@@ -103,9 +106,10 @@ class Controller:
             t = req[TOKEN]
         return await self.op(t, path, cmd, p, req_auth)
 
-    def setup(self, operators):
+    def setup(self, operators, sec):
         for op in operators:
             self.commands.update(op.commands)
+        self.sec = sec
 
     def set_mqtt(self, mqtt):
         self.__mqtt = mqtt

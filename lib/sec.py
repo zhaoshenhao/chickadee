@@ -1,4 +1,3 @@
-from time import time
 from utils import singleton, random_string, time_stamp
 from enc import cipher, encrypt, decrypt
 from ubinascii import a2b_base64, b2a_base64
@@ -26,9 +25,11 @@ def _pad_key(key : str) -> str:
 
 @singleton
 class Sec:
-    def __init__(self, dev_sec : str, hw_pin : str):
-        self.__hw_pin = hw_pin
-        self.__dev_sec = _pad_key(dev_sec)
+    def __init__(self, dev_sec : str = None, hw_pin : str = None):
+        if hw_pin is not None:
+            self.__hw_pin = hw_pin
+        if dev_sec is not None:
+            self.__dev_sec = _pad_key(dev_sec)
 
     def check_token(self, token : str):
         try:
@@ -60,12 +61,18 @@ class Sec:
             return cipher(_pad_key(self.__hw_pin))
         return cipher(self.__dev_sec)
 
-    def dec_payload(self, playload : dict) -> dict:
-        bs = self.dec_payload_str(playload)
-        return loads(bs.decode('utf-8'))
+    def dec_payload(self, payload : dict) -> dict:
+        if payload is None or len(payload) == 0:
+            return None
+        else:
+            bs = self.dec_payload_str(payload)
+            return loads(bs.decode('utf-8'))
 
-    def enc_paylaod(self, playload : dict) -> dict:
-        s = dumps(playload)
+    def enc_paylaod(self, payload : dict) -> dict:
+        if payload is None:
+            s = ''
+        else:
+            s = dumps(payload)
         return self.enc_payload_str(s)
 
     def dec_payload_str(self, payload : dict) -> bytes:
@@ -75,6 +82,8 @@ class Sec:
             1. 返回是字符串
             2. 有 Excpetion需要处理
         '''
+        if payload is None or len(payload) == 0:
+            return None
         p = payload['_']
         pb = bytes(p, 'ascii')
         bs = a2b_base64(pb)
@@ -82,7 +91,7 @@ class Sec:
 
     def enc_payload_str(self, payload : str) -> dict:
         '''
-        payload是字符串，返回playload：{'_': 'base64-str'}
+        payload是字符串，返回payload：{'_': 'base64-str'}
         '''
         c = self.get_cipher()
         bs = encrypt(c, payload)

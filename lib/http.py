@@ -1,7 +1,8 @@
 from tinyweb import webserver
 from ujson import dumps #pylint: disable=unused-import
 from op import CODE, VALUE, GET, SET, DELETE, result
-from hw import HTTP_PORT
+from sec import Sec
+from hw import HTTP_PORT, ENCRYPTED_OUTPUT, ENCRYPTED_INPUT, log
 
 app = webserver()
 
@@ -25,31 +26,43 @@ async def parse_request(req):
     if TOKEN in req.headers:
         t = req.headers[TOKEN].decode("utf-8")
     d = await req.read_parse_form_data()
+    if ENCRYPTED_INPUT:
+        st = Sec()
+        if d is not None:
+            d = st.dec_payload(d)
     return t, p, m, d, q
+
+def enc(data : dict):
+    if ENCRYPTED_OUTPUT:
+        st = Sec()
+        return st.enc_paylaod(data)
+    return data
 
 @app.catchall()
 async def index(request, response):
     try:
         t, p, m, d, _ = await parse_request(request)
         r = await opc.op(t, p, m, d)
-    except BaseException as e1: #NOSONAR
-        r = result(500, str(e1))
+    except BaseException as e: #NOSONAR
+        log.debug("Request error: %r", e)
+        r = result(500, str(e))
     code = r[CODE]
     if 200 <= code <= 299:
         v = None if VALUE not in r else r[VALUE]
         if v is None:
             s = ""
         else:
-            s = dumps(v)
+            s = dumps(enc(v))
     else:
         if VALUE in r:
             r.pop(VALUE)
-        s = dumps(r)
+        s = dumps(enc(r))
     response.code = r[CODE]
     # Start HTTP response with content-type text/html
     response.add_header('Content-Type', 'application/json')
     response.add_header('Content-Length', str(len(s)))
     await response._send_headers() #pylint: disable=protected-access
+
     await response.send(s)
 
 def http_run(o, loop_forever=False):

@@ -1,3 +1,4 @@
+from utils import singleton
 from bluetooth import UUID, BLE
 from ble_advertising import advertising_payload
 from micropython import const
@@ -5,7 +6,8 @@ from ujson import loads, dumps
 from op import AUTH_ERR, TOKEN, result
 from uasyncio import create_task, sleep
 from consumer import Consumer
-from hw import log
+from sec import Sec
+from hw import log, ENCRYPTED_OUTPUT, ENCRYPTED_INPUT
 
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
@@ -32,6 +34,7 @@ _UART_SERVICE = (
 _ADV_APPEARANCE_GENERIC_COMPUTER = const(128)
 AUTH_FAILED_COUNT = 10
 
+@singleton
 class BLEUART(Consumer):
     def __init__(self, opc, name="ybb", rxbuf=1024):
         Consumer.__init__(self)
@@ -54,10 +57,13 @@ class BLEUART(Consumer):
             log.debug("Read data: %s", bs)
             d = bs.decode().strip()
             json = loads(d)
+            if ENCRYPTED_INPUT: # 处理加密
+                st = Sec()
+                json = st.dec_payload(json)
             if TOKEN not in json:
                 return None, json
             return json[TOKEN], json
-        except BaseException as e: #NOSONAR
+        except BaseException as e:
             log.debug("Invalid request: %s" , e)
             return None, None
 
@@ -67,7 +73,7 @@ class BLEUART(Consumer):
                 log.debug("No authenticated central")
                 return
             self.write(dumps(r))
-        except BaseException as e: #NOSONAR
+        except BaseException as e:
             log.debug("Send failed: %r" , e)
 
     def _handle(self):
@@ -168,6 +174,10 @@ class BLEUART(Consumer):
             except: # NOSONAR # pylint: disable=W0702
                 pass
 
-    async def consume(self, data):
-        self.send(data)
+    async def consume(self, data: dict):
+        if ENCRYPTED_OUTPUT:
+            st = Sec()
+            self.send(st.enc_paylaod(data))
+        else:
+            self.send(data)
         sleep(0)

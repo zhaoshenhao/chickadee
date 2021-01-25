@@ -7,7 +7,8 @@ from ujson import loads, dumps
 from consumer import Consumer
 from umqtt.simple import MQTTClient
 from utime import time
-from hw import DEVICE_NAME, log
+from sec import Sec
+from hw import DEVICE_NAME, log, ENCRYPTED_OUTPUT, ENCRYPTED_INPUT
 
 CMD_TOPIC = "c/" + DEVICE_NAME
 CONFIG_NAME = "/dat/mqtt.json"
@@ -43,7 +44,11 @@ class Mqtt(ConfigOp, Consumer):
         self.add_command(self.__reconnect, SET, 'reconnect')
 
     async def consume(self, data):
-        self.publish(data)
+        if ENCRYPTED_OUTPUT:
+            st = Sec()
+            self.publish(st.enc_paylaod(data))
+        else:
+            self.publish(data)
         sleep(0)
 
     async def __get_info(self, _):
@@ -140,6 +145,9 @@ class Mqtt(ConfigOp, Consumer):
 
     def publish_op_log(self, p, c, ret):
         x = {'p': p, 'c': c, 'r': ret, 'tm': time_stamp()}
+        if ENCRYPTED_OUTPUT:
+            st = Sec()
+            x = st.enc_paylaod(x)
         return self.publish(x, topic = OP_LOG_TOPIC)
 
     def __sub_callback(self, topic, pay): 
@@ -147,6 +155,9 @@ class Mqtt(ConfigOp, Consumer):
         log.info('Received %s: %s' , topic.decode("utf-8"), s)
         try:
             json = loads(s)
+            if ENCRYPTED_INPUT: # 处理加密
+                st = Sec()
+                json = st.dec_payload(json)
             create_task(self.__opc.op_request(json))
         except BaseException as e:
             m = "Process message failed: %r" % e

@@ -32,7 +32,7 @@ class ConfigOp(Operator):
         return result(200, None, v)
 
     def load(self, force = False):
-        if self.__config == None or force:
+        if self.__config is None or force:
             self.__load()
         return self.__config
 

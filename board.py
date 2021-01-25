@@ -137,10 +137,13 @@ class Board:
 
     async def __setup_devices(self):
         hw.log.debug("Setting up device ...")
+        dev.config.load(True)
         from sensor import SensorProcess
+        from sec import Sec
         sensor_process = SensorProcess()
         sensor_process.setup(dev.CONSUMERS, dev.SENSORS, dev.IRQ_SENSORS)
-        dev.opc.setup(dev.OPERATORS)
+        st = Sec(dev.config.device_secret, hw.HW_PIN)
+        dev.opc.setup(dev.OPERATORS, st)
         create_task(self.__ntp_update())
         create_task(self.__gc())
 
