@@ -1,7 +1,8 @@
 from machine import Pin
 from sensor import Producer
-
 from utime import sleep_us,ticks_us
+
+# 超声波距离测量传感器
 
 class HCSR04(Producer):
     def __init__(self, trig_pin = 17, echo_pin = 16, name = 'hcsr04'):

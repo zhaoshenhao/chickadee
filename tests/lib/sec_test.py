@@ -2,7 +2,7 @@ from sec import Sec
 from op import request, result
 import dev
 
-st = Sec("1234567890123456", "12345678")
+st = Sec("", "12345678")
 
 req = request('sys/info', 'get', {'a': 'a', 'b': 1, 'c': True})
 req['t'] = 'get-tm1'

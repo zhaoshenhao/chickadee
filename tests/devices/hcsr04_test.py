@@ -12,7 +12,7 @@ async def demo_async():
 
 def demo():
     ds = HCSR04()
-    for _ in range(0,2):
+    for _ in range(0,20):
         print(ds.sensor_values)
         print(ds.get_distance())
         time.sleep(1)

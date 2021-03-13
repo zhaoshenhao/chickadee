@@ -1,0 +1,41 @@
+{
+    "mpfshell.open": "COM5",
+	"python.languageServer": "Pylance",
+	"python.analysis.autoSearchPath": true,
+    "python.pythonPath": "C:\\Users\\thinkpad\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
+    "python.autoComplete.extraPaths": [
+        "C:\\work\\emb\\chickadee", 
+        "C:\\work\\emb\\chickadee\\lib",
+        "C:\\work\\emb\\chickadee\\devices",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\micropython-esp32-1_13-103",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\micropython-1_13-frozen\\esp32\\RELEASE",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\cpython_core"
+    ],
+    "python.autoComplete.typeshedPaths": [
+        "C:\\work\\emb\\chickadee", 
+        "C:\\work\\emb\\chickadee\\lib",
+        "C:\\work\\emb\\chickadee\\devices",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\micropython-esp32-1_13-103",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\micropython-1_13-frozen\\esp32\\RELEASE",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\cpython_core"
+    ],
+    "python.analysis.typeshedPaths": [
+        "C:\\work\\emb\\chickadee", 
+        "C:\\work\\emb\\chickadee\\lib",
+        "C:\\work\\emb\\chickadee\\devices",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\micropython-esp32-1_13-103",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\micropython-1_13-frozen\\esp32\\RELEASE",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\cpython_core"
+    ],
+    "python.linting.pycodestyleEnabled": false,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.analysis.extraPaths": [
+        "C:\\work\\emb\\chickadee",
+        "C:\\work\\emb\\chickadee\\lib",
+        "C:\\work\\emb\\chickadee\\devices",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\micropython-esp32-1_13-103",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\micropython-1_13-frozen\\esp32\\RELEASE",
+        "C:\\work\\emb\\micropython-stubs\\stubs\\cpython_core"
+    ]
+}
