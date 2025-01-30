@@ -1,4 +1,4 @@
-# Chickadee 嵌入式框架
+# Chickadee 嵌入式 IoT 框架
 
 ## 0 主要特征
 
