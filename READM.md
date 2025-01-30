@@ -56,7 +56,7 @@ This framework provides a unified sensor processing framework. Developers only n
 
 #### 1.4.1 Architecture Diagram
 
-![Image](docs/Sensor Workflow.png "Sensor Workflow")
+![Image](docs/传感器工作流程.png "Sensor Workflow")
 
 #### 1.4.2 Main Files and Classes
 
@@ -78,7 +78,7 @@ This framework provides a consistent operation call interface, using similar dat
 
 ### 1.5.1 Architecture Diagram
 
-![Image](docs/Controller Diagram.png "Controller Diagram")
+![Image](docs/控制器示意图.png "Controller Diagram")
 
 ### 1.5.2 Main Files, Classes, Methods, and Structures
 
